@@ -1,4 +1,5 @@
 module com.example.lms {
+    exports com.example.lms.controller;
     requires javafx.controls;
     requires javafx.fxml;
     requires java.sql;

@@ -17,10 +17,18 @@ public class HelloApplication extends Application {
 
     }
     @Override
-    public void start(Stage stage) throws IOException {
-        stage.setScene(new Scene((FXMLLoader.load(Objects.requireNonNull(this.getClass().getResource("/View/HomeFormView.fxml"))))));
-        stage.show();
+    public void start(Stage primaryStage) {
+        try {
+            System.out.println(this.getClass().getResource("/com/example/lms/HomeView.fxml"));
+            primaryStage.setScene(new Scene(FXMLLoader.load(Objects.requireNonNull(this.getClass().getResource("/com/example/lms/HomeView.fxml")))));
+            primaryStage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+            // Handle the exception (e.g., show an error dialog)
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+            // Handle the null pointer exception (e.g., FXML file not found)
+        }
     }
-
 
 }
