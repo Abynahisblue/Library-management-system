@@ -44,4 +44,12 @@ public class Book {
     public void setStatus(String status) {
         this.status = status;
     }
+    public String toString() {
+        return "Book{" +
+                "id='" + id + '\'' +
+                ", title='" + title + '\'' +
+                ", author='" + author + '\'' +
+                ", status='" + status + '\'' +
+                '}';
+    }
 }

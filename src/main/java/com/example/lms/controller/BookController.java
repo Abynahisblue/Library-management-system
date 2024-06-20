@@ -204,7 +204,8 @@ public class BookController {
     }
 
     public void img_back(MouseEvent event) throws IOException {
-        URL resource = getClass().getResource("/View/HomeFormView.fxml");
+        URL resource = getClass().getResource("/com/example/lms/HomeView.fxml");
+        assert resource != null;
         Parent root = FXMLLoader.load(resource);
         Scene scene = new Scene(root);
         Stage primaryStage = (Stage) bk_root.getScene().getWindow();
