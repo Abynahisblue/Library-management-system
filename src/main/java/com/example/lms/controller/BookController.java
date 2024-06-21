@@ -14,6 +14,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.effect.DropShadow;
@@ -37,6 +38,9 @@ public class BookController {
     public TableView<Book> tbl_bk;
     public AnchorPane bk_root;
     public JFXButton btn_add;
+//    public JFXButton btn_dlt;
+//    public JFXButton btn_new;
+//    public ImageView img_back;
 
     // JDBC variables
     private Connection connection;

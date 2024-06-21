@@ -40,10 +40,10 @@ public class HomeController {
                     fxmlFile = "/com/example/lms/BookView.fxml";
                     break;
                 case "issue":
-                    fxmlFile = "/View/BookIssueView.fxml";
+                    fxmlFile = "/com/example/lms/BookIssued.fxml";
                     break;
                 case "bk_return":
-                    fxmlFile = "/View/BookReturnView.fxml";
+                    fxmlFile = "/com/example/lms/BookReturned.fxml";
                     break;
                 case "bk_search":
                     fxmlFile = "/View/BookSearchView.fxml";
