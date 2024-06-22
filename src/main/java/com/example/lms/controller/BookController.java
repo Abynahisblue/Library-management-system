@@ -160,8 +160,8 @@ public class BookController {
         try {
             if (btn_add.getText().equals("Add")) {
                 insertBook.setString(1, txt_bk_id.getText());
-                insertBook.setString(2, txt_bk_title.getText());
-                insertBook.setString(3, txt_bk_auth.getText());
+                insertBook.setString(3, txt_bk_title.getText());
+                insertBook.setString(2, txt_bk_auth.getText());
                 insertBook.setString(4, txt_bk_st.getText());
                 int affectedRows = insertBook.executeUpdate();
                 if (affectedRows > 0) {

@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class BookIssueController {
     public TextField txt_issid;
@@ -48,7 +49,7 @@ public class BookIssueController {
 
     private Connection connection;
 
-    public void initialize() {
+    public void initialize() throws ClassNotFoundException {
         DB.loadBooks();
         DB.loadPatrons();
         DB.loadBooksIssued();
@@ -61,7 +62,6 @@ public class BookIssueController {
         connection = DbConnection.getInstance().getConnection();
         // Set items for the table
         bk_issue_tbl.setItems(FXCollections.observableList(DB.bookIssued));
-        refreshTable();
 
         // Populate ComboBoxes
         mem_is_id.setItems(FXCollections.observableList(DB.patrons.stream().map(Patron::getId).toList()));
@@ -111,6 +111,7 @@ public class BookIssueController {
 
     public void add_Action(ActionEvent actionEvent) {
         try {
+            ObservableList<BookIssued> bookIssued = bk_issue_tbl.getItems();
             if (txt_issid.getText().isEmpty() ||
                     book_id.getSelectionModel().getSelectedItem() == null ||
                     mem_is_id.getSelectionModel().getSelectedItem() == null ||
@@ -206,9 +207,13 @@ public class BookIssueController {
         }
     }
 
-    private void refreshTable() {
-        ObservableList<BookIssued> issuedBooks = FXCollections.observableList(DB.bookIssued);
-        bk_issue_tbl.setItems(issuedBooks);
+    private void refreshTable() throws SQLException {
+        bk_issue_tbl.getItems().clear();
+        try {
+            initialize();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
     private void clearFields() {
