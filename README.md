@@ -1,5 +1,8 @@
 # Library Management System
 
+this is a link to the loom video explaining the UI and i implemented the OOP principles.
+https://www.loom.com/share/cb4831c05dce4c2bb5b7f816f7ab87d5?sid=8405c6d8-74dc-49db-a815-69ceb9d63e38
+
 A Java-based library management system that allows you to manage books, patrons, book issues and book returns.
 
 ## Features

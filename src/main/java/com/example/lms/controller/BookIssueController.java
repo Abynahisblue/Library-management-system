@@ -37,6 +37,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.LinkedList;
 
 public class BookIssueController {
     public TextField txt_issid;
@@ -130,7 +131,7 @@ public class BookIssueController {
 
     public void add_Action(ActionEvent actionEvent) {
         try {
-            ObservableList<BookIssued> bookIssued = bk_issue_tbl.getItems();
+            //ObservableList<BookIssued> bookIssued = bk_issue_tbl.getItems();
             if (txt_issid.getText().isEmpty() ||
                     book_id.getSelectionModel().getSelectedItem() == null ||
                     mem_is_id.getSelectionModel().getSelectedItem() == null ||
@@ -191,6 +192,7 @@ public class BookIssueController {
     }
 
     private void loadTableData() {
+        DB.bookIssued.clear();
         ObservableList<BookIssued> booksIssued = FXCollections.observableList(DB.bookIssued);
         try (ResultSet rst = selectAll.executeQuery()) {
             while (rst.next()) {
@@ -204,7 +206,7 @@ public class BookIssueController {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        booksIssued= FXCollections.observableList(booksIssued.stream().distinct().toList());
+        System.out.println(booksIssued.size());
         bk_issue_tbl.setItems(booksIssued);
     }
 
