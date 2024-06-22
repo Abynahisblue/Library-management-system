@@ -34,7 +34,7 @@ public class HomeController {
 
             switch (icon.getId()) {
                 case "patron":
-                    fxmlFile = "/View/MembersView.fxml";
+                    fxmlFile = "/com/example/lms/PatronView.fxml";
                     break;
                 case "books":
                     fxmlFile = "/com/example/lms/BookView.fxml";
@@ -46,7 +46,7 @@ public class HomeController {
                     fxmlFile = "/com/example/lms/BookReturned.fxml";
                     break;
                 case "bk_search":
-                    fxmlFile = "/View/BookSearchView.fxml";
+                    fxmlFile = "/com/example/lms/BookSearchView.fxml";
                     break;
             }
 

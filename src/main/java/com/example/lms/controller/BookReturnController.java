@@ -2,6 +2,7 @@ package com.example.lms.controller;
 
 
 
+import com.example.lms.db.DB;
 import com.example.lms.db.DbConnection;
 import com.example.lms.model.BookReturn;
 import javafx.fxml.FXML;
@@ -43,6 +44,7 @@ public class BookReturnController {
         initializeTableColumns();
         loadReturnDetails();
         loadIssueIds();
+        DB.loadBooksIssued();
 
         cmb_issue_id.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {

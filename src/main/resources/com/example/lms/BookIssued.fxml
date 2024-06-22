@@ -49,7 +49,7 @@
         <columns>
             <TableColumn fx:id="iss_id" prefWidth="75.0" text="ID"/>
             <TableColumn fx:id="iss_date" prefWidth="93.0" text="Date"/>
-            <TableColumn fx:id="mem_name" prefWidth="195.0" text="Patron Name"/>
+            <TableColumn fx:id="bookId" prefWidth="195.0" text="Book ID"/>
             <TableColumn fx:id="mem_id" prefWidth="100.0" text="Patron ID"/>
         </columns>
         <effect>

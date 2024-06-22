@@ -2,10 +2,12 @@ package com.example.lms.controller;
 
 
 import com.example.lms.db.DB;
+import com.example.lms.db.DbConnection;
 import com.example.lms.model.Book;
 import com.example.lms.model.BookIssued;
 import com.example.lms.model.Patron;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -31,6 +33,8 @@ import javafx.scene.control.TextField;
 
 import java.io.IOException;
 import java.net.URL;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 
 public class BookIssueController {
     public TextField txt_issid;
@@ -42,26 +46,44 @@ public class BookIssueController {
     public TableView<BookIssued> bk_issue_tbl;
     public AnchorPane bk_iss;
 
+    private Connection connection;
+
     public void initialize() {
+        DB.loadBooks();
+        DB.loadPatrons();
+        DB.loadBooksIssued();
+        // Initialize table columns
         bk_issue_tbl.getColumns().get(0).setCellValueFactory(new PropertyValueFactory<>("issueId"));
         bk_issue_tbl.getColumns().get(1).setCellValueFactory(new PropertyValueFactory<>("date"));
-        bk_issue_tbl.getColumns().get(2).setCellValueFactory(new PropertyValueFactory<>("memberId"));
+        bk_issue_tbl.getColumns().get(2).setCellValueFactory(new PropertyValueFactory<>("patronId"));
         bk_issue_tbl.getColumns().get(3).setCellValueFactory(new PropertyValueFactory<>("bookId"));
 
+        connection = DbConnection.getInstance().getConnection();
+        // Set items for the table
         bk_issue_tbl.setItems(FXCollections.observableList(DB.bookIssued));
+        refreshTable();
 
+        // Populate ComboBoxes
         mem_is_id.setItems(FXCollections.observableList(DB.patrons.stream().map(Patron::getId).toList()));
         book_id.setItems(FXCollections.observableList(DB.books.stream().map(Book::getId).toList()));
 
+        // Add listener to member ComboBox
         mem_is_id.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<String>() {
             @Override
             public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
                 if (newValue != null) {
                     String selectedMemberId = mem_is_id.getSelectionModel().getSelectedItem();
-                    txt_name.setText(DB.patrons.stream().filter(p -> p.getId().equals(selectedMemberId)).findFirst().orElseThrow().getName());
+                    DB.patrons.stream()
+                            .filter(p -> p.getId().equals(selectedMemberId))
+                            .findFirst()
+                            .ifPresentOrElse(
+                                    patron -> txt_name.setText(patron.getName()),
+                                    () -> txt_name.setText("Member not found")
+                            );
                 }
             }
         });
+
 
         book_id.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<String>() {
             @Override
@@ -98,14 +120,31 @@ public class BookIssueController {
                 return;
             }
 
-            String memberId = mem_is_id.getSelectionModel().getSelectedItem();
+            String patronId = mem_is_id.getSelectionModel().getSelectedItem();
             String bookId = book_id.getSelectionModel().getSelectedItem();
+            String issueId = txt_issid.getText();
+            String issueDate = txt_isu_date.getValue().toString();
 
-            BookIssued newIssuedBook = new BookIssued(txt_issid.getText(), txt_isu_date.getValue().toString(), memberId, bookId);
+            BookIssued newIssuedBook = new BookIssued(txt_issid.getText(), txt_isu_date.getValue().toString(), patronId, bookId);
             DB.bookIssued.add(newIssuedBook);
 
-            Alert successAlert = new Alert(Alert.AlertType.INFORMATION, "Book issued successfully!", ButtonType.OK);
-            successAlert.showAndWait();
+            String insertSQL = "INSERT INTO issue_table (issueId, date, patronId, bookId) VALUES (?, ?, ?, ?)";
+            try (PreparedStatement insertStatement = connection.prepareStatement(insertSQL)) {
+                insertStatement.setString(1, issueId);
+                insertStatement.setString(2, issueDate);
+                insertStatement.setString(3, patronId);
+                insertStatement.setString(4, bookId);
+
+                int affectedRows = insertStatement.executeUpdate();
+                if (affectedRows > 0) {
+                    Alert successAlert = new Alert(Alert.AlertType.INFORMATION, "Book issued successfully!", ButtonType.OK);
+                    successAlert.showAndWait();
+                    refreshTable();
+                } else {
+                    Alert failureAlert = new Alert(Alert.AlertType.ERROR, "Failed to issue book. Please try again.", ButtonType.OK);
+                    failureAlert.showAndWait();
+                }
+            }
 
             clearFields();
         } catch (Exception ex) {
@@ -165,6 +204,11 @@ public class BookIssueController {
             glow.setRadius(20);
             icon.setEffect(glow);
         }
+    }
+
+    private void refreshTable() {
+        ObservableList<BookIssued> issuedBooks = FXCollections.observableList(DB.bookIssued);
+        bk_issue_tbl.setItems(issuedBooks);
     }
 
     private void clearFields() {

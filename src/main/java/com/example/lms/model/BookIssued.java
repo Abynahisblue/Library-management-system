@@ -6,10 +6,13 @@ public class BookIssued {
     private String patronId;
     private String bookId;
 
-    public BookIssued(String issueId, String date, String userId, String bookId) {
+    public BookIssued(){
+
+    }
+    public BookIssued(String issueId, String date, String patronId, String bookId) {
         this.issueId = issueId;
         this.date = date;
-        this.patronId = userId;
+        this.patronId = patronId;
         this.bookId = bookId;
     }
 
@@ -43,5 +46,13 @@ public class BookIssued {
 
     public void setPatronId(String patronId) {
         this.patronId = patronId;
+    }
+    public String toString() {
+        return "BookIssued{" +
+                "issueid='" + issueId + '\'' +
+                ", date='" + date + '\'' +
+                ", bookId='" + bookId + '\'' +
+                ", patronId='" + patronId + '\'' +
+                '}';
     }
 }

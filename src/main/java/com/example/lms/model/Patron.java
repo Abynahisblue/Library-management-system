@@ -3,15 +3,21 @@ package com.example.lms.model;
 public class Patron {
     private String id;
     private String name;
-    private String email;
+    private String address;
     private String contact;
+
+    public Patron(){
+
+    }
 
     public Patron(String id, String name, String email, String contact) {
         this.id = id;
         this.name = name;
-        this.email = email;
+        this.address = email;
         this.contact = contact;
     }
+
+
 
     public String getId() {
         return id;
@@ -29,12 +35,12 @@ public class Patron {
         this.name = name;
     }
 
-    public String getEmail() {
-        return email;
+    public String getAddress() {
+        return address;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public void setAddress(String address) {
+        this.address = address;
     }
 
     public String getContact() {

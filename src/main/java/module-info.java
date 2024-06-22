@@ -3,6 +3,7 @@ module com.example.lms {
     requires javafx.fxml;
     requires java.sql;
     requires com.jfoenix;
+    requires mysql.connector.j;
     //requires java.base;
 
     opens com.example.lms to javafx.fxml;
