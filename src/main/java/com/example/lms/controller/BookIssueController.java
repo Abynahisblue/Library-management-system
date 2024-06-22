@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class BookIssueController {
@@ -48,8 +49,9 @@ public class BookIssueController {
     public AnchorPane bk_iss;
 
     private Connection connection;
+    private PreparedStatement selectAll;
 
-    public void initialize() throws ClassNotFoundException {
+    public void initialize()  {
         DB.loadBooks();
         DB.loadPatrons();
         DB.loadBooksIssued();
@@ -59,13 +61,30 @@ public class BookIssueController {
         bk_issue_tbl.getColumns().get(2).setCellValueFactory(new PropertyValueFactory<>("patronId"));
         bk_issue_tbl.getColumns().get(3).setCellValueFactory(new PropertyValueFactory<>("bookId"));
 
-        connection = DbConnection.getInstance().getConnection();
+        try {
+            connection = DbConnection.getInstance().getConnection();
+            selectAll = connection.prepareStatement("SELECT * FROM issue_table");
+            loadTableData();
+        }catch(SQLException e){
+            e.printStackTrace();
+        }
+
         // Set items for the table
         bk_issue_tbl.setItems(FXCollections.observableList(DB.bookIssued));
 
         // Populate ComboBoxes
-        mem_is_id.setItems(FXCollections.observableList(DB.patrons.stream().map(Patron::getId).toList()));
-        book_id.setItems(FXCollections.observableList(DB.books.stream().map(Book::getId).toList()));
+        mem_is_id.getItems().clear();
+        book_id.getItems().clear();
+
+
+        mem_is_id.getSelectionModel().clearSelection();
+        book_id.getSelectionModel().clearSelection();
+
+        var bookkk = FXCollections.observableList(DB.books.stream().map(Book::getId).distinct().toList());
+        System.out.println(bookkk.size());
+
+        mem_is_id.setItems(FXCollections.observableList(DB.patrons.stream().map(Patron::getId).distinct().toList()));
+        book_id.setItems(bookkk);
 
         // Add listener to member ComboBox
         mem_is_id.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<String>() {
@@ -171,7 +190,25 @@ public class BookIssueController {
         }
     }
 
-    public void back_click(MouseEvent event) {
+    private void loadTableData() {
+        ObservableList<BookIssued> booksIssued = FXCollections.observableList(DB.bookIssued);
+        try (ResultSet rst = selectAll.executeQuery()) {
+            while (rst.next()) {
+                booksIssued.add(new BookIssued(
+                        rst.getString("issueId"),
+                        rst.getString("date"),
+                        rst.getString("patronId"),
+                        rst.getString("bookId")
+                ));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        booksIssued= FXCollections.observableList(booksIssued.stream().distinct().toList());
+        bk_issue_tbl.setItems(booksIssued);
+    }
+
+    public void back_click(MouseEvent event){
         try {
             URL resource = getClass().getResource("/com/example/lms/HomeView.fxml");
             assert resource != null;
@@ -211,7 +248,7 @@ public class BookIssueController {
         bk_issue_tbl.getItems().clear();
         try {
             initialize();
-        } catch (ClassNotFoundException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
