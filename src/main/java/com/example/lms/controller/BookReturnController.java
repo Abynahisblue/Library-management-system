@@ -167,7 +167,7 @@ public class BookReturnController {
 
     private void updateBookStatus(String issueID) throws SQLException {
         String bookId = getBookIdFromIssue(issueID);
-        String sql = "UPDATE book_detail SET states = 'Available' WHERE id = ?";
+        String sql = "UPDATE book_detail SET status = 'Available' WHERE id = ?";
         PreparedStatement pstm = connection.prepareStatement(sql);
         pstm.setString(1, bookId);
         pstm.executeUpdate();

@@ -45,7 +45,7 @@ public class DB {
              ResultSet resultSet = statement.executeQuery("SELECT * FROM issue_table")) {
 
             while (resultSet.next()) {
-                books.add(new Book(resultSet.getString("issueId"), resultSet.getString("date"), resultSet.getString("patronId"), resultSet.getString("bookId")));
+                bookIssued.add(new BookIssued(resultSet.getString("issueId"), resultSet.getString("date"), resultSet.getString("patronId"), resultSet.getString("bookId")));
             }
         } catch (SQLException e) {
             e.printStackTrace();

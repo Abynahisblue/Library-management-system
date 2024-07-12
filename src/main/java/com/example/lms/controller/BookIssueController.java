@@ -74,18 +74,17 @@ public class BookIssueController {
         bk_issue_tbl.setItems(FXCollections.observableList(DB.bookIssued));
 
         // Populate ComboBoxes
-        mem_is_id.getItems().clear();
-        book_id.getItems().clear();
+//        mem_is_id.getItems();
+//        book_id.getItems();
 
 
         mem_is_id.getSelectionModel().clearSelection();
         book_id.getSelectionModel().clearSelection();
 
-        var bookkk = FXCollections.observableList(DB.books.stream().map(Book::getId).distinct().toList());
-        System.out.println(bookkk.size());
 
         mem_is_id.setItems(FXCollections.observableList(DB.patrons.stream().map(Patron::getId).distinct().toList()));
-        book_id.setItems(bookkk);
+        book_id.setItems(FXCollections.observableList(DB.books.stream().map(Book::getId).distinct().toList()));
+        System.out.println(FXCollections.observableList(DB.books.stream().map(Book::getId).distinct().toList()));
 
         // Add listener to member ComboBox
         mem_is_id.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<String>() {
@@ -131,7 +130,6 @@ public class BookIssueController {
 
     public void add_Action(ActionEvent actionEvent) {
         try {
-            //ObservableList<BookIssued> bookIssued = bk_issue_tbl.getItems();
             if (txt_issid.getText().isEmpty() ||
                     book_id.getSelectionModel().getSelectedItem() == null ||
                     mem_is_id.getSelectionModel().getSelectedItem() == null ||
@@ -146,7 +144,7 @@ public class BookIssueController {
             String issueId = txt_issid.getText();
             String issueDate = txt_isu_date.getValue().toString();
 
-            BookIssued newIssuedBook = new BookIssued(txt_issid.getText(), txt_isu_date.getValue().toString(), patronId, bookId);
+            BookIssued newIssuedBook = new BookIssued(issueId, issueDate, patronId, bookId);
             DB.bookIssued.add(newIssuedBook);
 
             String insertSQL = "INSERT INTO issue_table (issueId, date, patronId, bookId) VALUES (?, ?, ?, ?)";
@@ -158,6 +156,8 @@ public class BookIssueController {
 
                 int affectedRows = insertStatement.executeUpdate();
                 if (affectedRows > 0) {
+                    updateBookStatusToUnavailable(issueId);
+
                     Alert successAlert = new Alert(Alert.AlertType.INFORMATION, "Book issued successfully!", ButtonType.OK);
                     successAlert.showAndWait();
                     refreshTable();
@@ -172,6 +172,29 @@ public class BookIssueController {
             ex.printStackTrace();
         }
     }
+
+    private void updateBookStatusToUnavailable(String issueID) throws SQLException {
+        String bookId = getBookIdFromIssue(issueID);
+        String sql = "UPDATE book_detail SET status = 'Unavailable' WHERE id = ?";
+        try (PreparedStatement pstm = connection.prepareStatement(sql)) {
+            pstm.setString(1, bookId);
+            pstm.executeUpdate();
+        }
+    }
+    private String getBookIdFromIssue(String issueID) throws SQLException {
+        String sql = "SELECT bookId FROM issue_table WHERE issueId = ?";
+        try (PreparedStatement pstm = connection.prepareStatement(sql)) {
+            pstm.setString(1, issueID);
+            try (ResultSet rs = pstm.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("bookId");
+                } else {
+                    throw new SQLException("Issue ID not found: " + issueID);
+                }
+            }
+        }
+    }
+
 
     public void delete_Action(ActionEvent actionEvent) {
         BookIssued selectedBook = bk_issue_tbl.getSelectionModel().getSelectedItem();
