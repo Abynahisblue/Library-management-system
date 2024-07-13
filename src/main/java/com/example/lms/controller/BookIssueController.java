@@ -84,7 +84,6 @@ public class BookIssueController {
 
         mem_is_id.setItems(FXCollections.observableList(DB.patrons.stream().map(Patron::getId).distinct().toList()));
         book_id.setItems(FXCollections.observableList(DB.books.stream().map(Book::getId).distinct().toList()));
-        System.out.println(FXCollections.observableList(DB.books.stream().map(Book::getId).distinct().toList()));
 
         // Add listener to member ComboBox
         mem_is_id.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<String>() {
@@ -144,6 +143,13 @@ public class BookIssueController {
             String issueId = txt_issid.getText();
             String issueDate = txt_isu_date.getValue().toString();
 
+            // Check if the book is available
+            if (!isBookAvailable(bookId)) {
+                Alert alert = new Alert(Alert.AlertType.ERROR, "The book is currently unavailable.", ButtonType.OK);
+                alert.showAndWait();
+                return;
+            }
+
             BookIssued newIssuedBook = new BookIssued(issueId, issueDate, patronId, bookId);
             DB.bookIssued.add(newIssuedBook);
 
@@ -195,6 +201,20 @@ public class BookIssueController {
         }
     }
 
+    private boolean isBookAvailable(String bookId) throws SQLException {
+        String sql = "SELECT status FROM book_detail WHERE id = ?";
+        try (PreparedStatement pstm = connection.prepareStatement(sql)) {
+            pstm.setString(1, bookId);
+            try (ResultSet rs = pstm.executeQuery()) {
+                if (rs.next()) {
+                    String status = rs.getString("status");
+                    return "Available".equalsIgnoreCase(status);
+                } else {
+                    throw new SQLException("Book ID not found: " + bookId);
+                }
+            }
+        }
+    }
 
     public void delete_Action(ActionEvent actionEvent) {
         BookIssued selectedBook = bk_issue_tbl.getSelectionModel().getSelectedItem();
@@ -229,7 +249,6 @@ public class BookIssueController {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        System.out.println(booksIssued.size());
         bk_issue_tbl.setItems(booksIssued);
     }
 

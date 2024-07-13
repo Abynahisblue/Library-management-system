@@ -191,6 +191,12 @@ public class BookController {
         }
 
         try {
+            // Check if the book is available
+            if (!isBookAvailable(selectedBook.getId())) {
+                showAlert(Alert.AlertType.ERROR, "The book cannot be deleted as it is currently unavailable.");
+                return;
+            }
+
             deleteBook.setString(1, selectedBook.getId());
             int affectedRows = deleteBook.executeUpdate();
             if (affectedRows > 0) {
@@ -199,6 +205,21 @@ public class BookController {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        }
+    }
+
+    private boolean isBookAvailable(String bookId) throws SQLException {
+        String sql = "SELECT status FROM book_detail WHERE id = ?";
+        try (PreparedStatement pstm = connection.prepareStatement(sql)) {
+            pstm.setString(1, bookId);
+            try (ResultSet rs = pstm.executeQuery()) {
+                if (rs.next()) {
+                    String status = rs.getString("status");
+                    return "Available".equalsIgnoreCase(status);
+                } else {
+                    throw new SQLException("Book ID not found: " + bookId);
+                }
+            }
         }
     }
 

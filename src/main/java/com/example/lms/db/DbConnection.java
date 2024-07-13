@@ -31,7 +31,7 @@ public class DbConnection {
                                 "CREATE TABLE IF NOT EXISTS `book_detail` (" +
                                 "  `id` varchar(10) NOT NULL," +
                                 "  `title` varchar(50) DEFAULT NULL," +
-                                "  `author` varchar(20) DEFAULT NULL," +
+                                "  `author` varchar(50) DEFAULT NULL," +
                                 "  `status` varchar(20) DEFAULT NULL," +
                                 "  PRIMARY KEY (`id`)" +
                                 ") ENGINE=InnoDB DEFAULT CHARSET=latin1;" +
