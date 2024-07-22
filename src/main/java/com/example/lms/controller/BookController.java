@@ -2,20 +2,16 @@ package com.example.lms.controller;
 
 import com.example.lms.db.DbConnection;
 import com.example.lms.model.Book;
-import com.jfoenix.controls.JFXButton;
-import com.jfoenix.controls.JFXTextField;
 import javafx.animation.ScaleTransition;
 import javafx.animation.TranslateTransition;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.image.ImageView;
@@ -27,20 +23,22 @@ import javafx.util.Duration;
 
 import java.io.IOException;
 import java.net.URL;
-import java.sql.*;
-import java.util.Optional;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public class BookController {
-    public JFXTextField txt_bk_id;
-    public JFXTextField txt_bk_title;
-    public JFXTextField txt_bk_auth;
-    public JFXTextField txt_bk_st;
+    public TextField txt_bk_id;
+    public TextField txt_bk_title;
+    public TextField txt_bk_auth;
+    public TextField txt_bk_st;
     public TableView<Book> tbl_bk;
     public AnchorPane bk_root;
-    public JFXButton btn_add;
-//    public JFXButton btn_dlt;
-//    public JFXButton btn_new;
-//    public ImageView img_back;
+    public Button btn_add;
+    public Button btn_dlt;
+    public Button btn_new;
+    public ImageView img_back;
 
     // JDBC variables
     private Connection connection;
@@ -54,10 +52,19 @@ public class BookController {
     public void initialize() {
         txt_bk_id.setDisable(true);
 
-        tbl_bk.getColumns().get(0).setCellValueFactory(new PropertyValueFactory<>("id"));
-        tbl_bk.getColumns().get(1).setCellValueFactory(new PropertyValueFactory<>("title"));
-        tbl_bk.getColumns().get(2).setCellValueFactory(new PropertyValueFactory<>("author"));
-        tbl_bk.getColumns().get(3).setCellValueFactory(new PropertyValueFactory<>("status"));
+        TableColumn<Book, String> idColumn = new TableColumn<>("ID");
+        idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
+
+        TableColumn<Book, String> titleColumn = new TableColumn<>("Title");
+        titleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
+
+        TableColumn<Book, String> authorColumn = new TableColumn<>("Author");
+        authorColumn.setCellValueFactory(new PropertyValueFactory<>("author"));
+
+        TableColumn<Book, String> statusColumn = new TableColumn<>("Status");
+        statusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
+
+        tbl_bk.getColumns().addAll(idColumn, titleColumn, authorColumn, statusColumn);
 
         try {
             connection = DbConnection.getInstance().getConnection();
@@ -80,7 +87,8 @@ public class BookController {
         });
     }
 
-    private void loadTableData() {
+
+    void loadTableData() {
         ObservableList<Book> books = FXCollections.observableArrayList();
         try (ResultSet rst = selectAll.executeQuery()) {
             while (rst.next()) {
@@ -132,7 +140,7 @@ public class BookController {
         }
     }
 
-    private String generateNewId() throws SQLException {
+    String generateNewId() throws SQLException {
         int maxId = 0;
         try (ResultSet rst = newIdQuery.executeQuery()) {
             while (rst.next()) {
@@ -160,8 +168,8 @@ public class BookController {
         try {
             if (btn_add.getText().equals("Add")) {
                 insertBook.setString(1, txt_bk_id.getText());
-                insertBook.setString(3, txt_bk_title.getText());
-                insertBook.setString(2, txt_bk_auth.getText());
+                insertBook.setString(2, txt_bk_title.getText());
+                insertBook.setString(3, txt_bk_auth.getText());
                 insertBook.setString(4, txt_bk_st.getText());
                 int affectedRows = insertBook.executeUpdate();
                 if (affectedRows > 0) {
@@ -261,7 +269,9 @@ public class BookController {
     }
 
     private void showAlert(Alert.AlertType alertType, String message) {
-        Alert alert = new Alert(alertType, message, ButtonType.OK);
-        alert.showAndWait();
+        Platform.runLater(() -> {
+            Alert alert = new Alert(alertType, message, ButtonType.OK);
+            alert.showAndWait();
+        });
     }
 }

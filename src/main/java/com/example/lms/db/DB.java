@@ -17,6 +17,7 @@ public class DB {
     public static void loadBooks() {
         try (Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/library", "root", "Sandy_@98");
              Statement statement = connection.createStatement();
+
              ResultSet resultSet = statement.executeQuery("SELECT * FROM book_detail")) {
 
             while (resultSet.next()) {

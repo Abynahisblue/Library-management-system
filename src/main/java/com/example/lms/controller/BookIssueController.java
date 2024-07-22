@@ -9,12 +9,11 @@ import com.example.lms.model.Patron;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.Stage;
@@ -27,9 +26,6 @@ import javafx.scene.paint.Color;
 import javafx.animation.ScaleTransition;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.DatePicker;
-import javafx.scene.control.TextField;
 
 import java.io.IOException;
 import java.net.URL;
@@ -40,50 +36,76 @@ import java.sql.SQLException;
 import java.util.LinkedList;
 
 public class BookIssueController {
+    @FXML
     public TextField txt_issid;
+    @FXML
     public DatePicker txt_isu_date;
+    @FXML
     public TextField txt_name;
+    @FXML
     public TextField txt_title;
+    @FXML
     public ComboBox<String> mem_is_id;
+    @FXML
     public ComboBox<String> book_id;
+    @FXML
     public TableView<BookIssued> bk_issue_tbl;
+    @FXML
     public AnchorPane bk_iss;
 
     private Connection connection;
     private PreparedStatement selectAll;
 
-    public void initialize()  {
+
+    @FXML
+    public void initialize() {
+        // Load data from the database
         DB.loadBooks();
         DB.loadPatrons();
         DB.loadBooksIssued();
-        // Initialize table columns
-        bk_issue_tbl.getColumns().get(0).setCellValueFactory(new PropertyValueFactory<>("issueId"));
-        bk_issue_tbl.getColumns().get(1).setCellValueFactory(new PropertyValueFactory<>("date"));
-        bk_issue_tbl.getColumns().get(2).setCellValueFactory(new PropertyValueFactory<>("patronId"));
-        bk_issue_tbl.getColumns().get(3).setCellValueFactory(new PropertyValueFactory<>("bookId"));
 
+        // Initialize table columns
+        bk_issue_tbl.setDisable(true); // This disables the TableView initially
+
+        TableColumn<BookIssued, String> issueIdColumn = new TableColumn<>("Issue ID");
+        issueIdColumn.setCellValueFactory(new PropertyValueFactory<>("issueId"));
+
+        TableColumn<BookIssued, String> dateColumn = new TableColumn<>("Date");
+        dateColumn.setCellValueFactory(new PropertyValueFactory<>("date"));
+
+        TableColumn<BookIssued, String> patronIdColumn = new TableColumn<>("Patron ID");
+        patronIdColumn.setCellValueFactory(new PropertyValueFactory<>("patronId"));
+
+        TableColumn<BookIssued, String> bookIdColumn = new TableColumn<>("Book ID");
+        bookIdColumn.setCellValueFactory(new PropertyValueFactory<>("bookId"));
+
+        bk_issue_tbl.getColumns().addAll(issueIdColumn, dateColumn, patronIdColumn, bookIdColumn);
+
+        // Establish a connection and load table data
         try {
             connection = DbConnection.getInstance().getConnection();
             selectAll = connection.prepareStatement("SELECT * FROM issue_table");
             loadTableData();
-        }catch(SQLException e){
+        } catch (SQLException e) {
             e.printStackTrace();
         }
 
-        // Set items for the table
-        bk_issue_tbl.setItems(FXCollections.observableList(DB.bookIssued));
+        // Set items for the table if bookIssued list is not empty
+        if (!DB.bookIssued.isEmpty()) {
+            bk_issue_tbl.setItems(FXCollections.observableList(DB.bookIssued));
+        }
 
-        // Populate ComboBoxes
-//        mem_is_id.getItems();
-//        book_id.getItems();
-
-
+        // Clear ComboBox selections
         mem_is_id.getSelectionModel().clearSelection();
         book_id.getSelectionModel().clearSelection();
 
-
-        mem_is_id.setItems(FXCollections.observableList(DB.patrons.stream().map(Patron::getId).distinct().toList()));
-        book_id.setItems(FXCollections.observableList(DB.books.stream().map(Book::getId).distinct().toList()));
+        // Populate ComboBoxes if lists are not empty
+        if (!DB.patrons.isEmpty()) {
+            mem_is_id.setItems(FXCollections.observableList(DB.patrons.stream().map(Patron::getId).distinct().toList()));
+        }
+        if (!DB.books.isEmpty()) {
+            book_id.setItems(FXCollections.observableList(DB.books.stream().map(Book::getId).distinct().toList()));
+        }
 
         // Add listener to member ComboBox
         mem_is_id.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<String>() {
@@ -102,13 +124,19 @@ public class BookIssueController {
             }
         });
 
-
+        // Add listener to book ComboBox
         book_id.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<String>() {
             @Override
             public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
                 if (newValue != null) {
                     String selectedBookId = book_id.getSelectionModel().getSelectedItem();
-                    txt_title.setText(DB.books.stream().filter(b -> b.getId().equals(selectedBookId)).findFirst().orElseThrow().getTitle());
+                    DB.books.stream()
+                            .filter(b -> b.getId().equals(selectedBookId))
+                            .findFirst()
+                            .ifPresentOrElse(
+                                    book -> txt_title.setText(book.getTitle()),
+                                    () -> txt_title.setText("Book not found")
+                            );
                 }
             }
         });
@@ -234,7 +262,7 @@ public class BookIssueController {
         }
     }
 
-    private void loadTableData() {
+    void loadTableData() {
         DB.bookIssued.clear();
         ObservableList<BookIssued> booksIssued = FXCollections.observableList(DB.bookIssued);
         try (ResultSet rst = selectAll.executeQuery()) {

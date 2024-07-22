@@ -1,0 +1,82 @@
+package com.example.lms.db;
+
+
+import com.example.lms.model.Book;
+import com.example.lms.model.Patron;
+import com.example.lms.model.BookIssued;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.LinkedList;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+class DBTest {
+
+    private static Connection connection;
+
+    @BeforeAll
+    static void setUp() throws SQLException {
+        connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/library", "root", "Sandy_@98");
+//        try (Statement statement = connection.createStatement()) {
+//            statement.execute("CREATE TABLE IF NOT EXISTS book_detail (id VARCHAR(50), title VARCHAR(100), author VARCHAR(100), status VARCHAR(20))");
+//            statement.execute("CREATE TABLE IF NOT EXISTS member_detail (id VARCHAR(50), name VARCHAR(100), address VARCHAR(100), contact VARCHAR(20))");
+//            statement.execute("CREATE TABLE IF NOT EXISTS issue_table (issueId VARCHAR(50), date VARCHAR(50), patronId VARCHAR(50), bookId VARCHAR(50))");
+//
+//            statement.execute("INSERT INTO book_detail (id, title, author, status) VALUES ('1', 'Test Book', 'Test Author', 'Available')");
+//            statement.execute("INSERT INTO member_detail (id, name, address, contact) VALUES ('1', 'Test Patron', '123 Test St', '1234567890')");
+//            statement.execute("INSERT INTO issue_table (issueId, date, patronId, bookId) VALUES ('1', '2024-07-18', '1', '1')");
+//        }
+    }
+
+    @AfterAll
+    static void tearDown() throws SQLException {
+
+        connection.close();
+    }
+
+    @Test
+    void testLoadBooks() {
+        // Clear the books list before loading
+        DB.books.clear();
+
+        // Load books from the test database
+        DB.loadBooks();
+
+        // Assertions
+        LinkedList<Book> books = DB.books;
+        assertEquals(3, books.size());
+    }
+
+    @Test
+    void testLoadPatrons() {
+        // Clear the patrons list before loading
+        DB.patrons.clear();
+
+        // Load patrons from the test database
+        DB.loadPatrons();
+
+        // Assertions
+        LinkedList<Patron> patrons = DB.patrons;
+        assertEquals(3, patrons.size());
+    }
+
+    @Test
+    void testLoadBooksIssued() {
+        // Clear the bookIssued list before loading
+        DB.bookIssued.clear();
+
+        // Load issued books from the test database
+        DB.loadBooksIssued();
+
+        // Assertions
+        LinkedList<BookIssued> bookIssued = DB.bookIssued;
+        assertEquals(1, bookIssued.size());
+    }
+}
