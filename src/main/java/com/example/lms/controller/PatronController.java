@@ -218,7 +218,7 @@ public class PatronController {
         refreshTable();
     }
 
-    private void refreshTable() throws SQLException {
+    void refreshTable() throws SQLException {
         mem_tbl.getItems().clear();
         try {
             initialize();

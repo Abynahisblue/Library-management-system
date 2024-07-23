@@ -1,0 +1,7 @@
+-------------------------------------------------------------------------------
+Test set: com.example.lms.db.DbConnectionTest
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.001 s <<< FAILURE! - in com.example.lms.db.DbConnectionTest
+com.example.lms.db.DbConnectionTest  Time elapsed: 0.001 s  <<< ERROR!
+java.lang.reflect.InaccessibleObjectException: Unable to make public static void com.example.lms.db.DbConnectionTest.setupTestDatabase() accessible: module com.example.lms does not "opens com.example.lms.db" to unnamed module @55fe41ea
+

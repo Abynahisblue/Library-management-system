@@ -2,8 +2,6 @@ package com.example.lms.controller;
 
 import com.example.lms.db.DbConnection;
 import com.example.lms.model.Book;
-import com.jfoenix.controls.JFXButton;
-import com.jfoenix.controls.JFXTextField;
 import javafx.animation.ScaleTransition;
 import javafx.animation.TranslateTransition;
 import javafx.collections.FXCollections;
@@ -12,10 +10,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.image.ImageView;
@@ -31,18 +26,14 @@ import java.sql.*;
 import java.util.Optional;
 
 public class BookController {
-    public JFXTextField txt_bk_id;
-    public JFXTextField txt_bk_title;
-    public JFXTextField txt_bk_auth;
-    public JFXTextField txt_bk_st;
+    public TextField txt_bk_id;
+    public TextField txt_bk_title;
+    public TextField txt_bk_auth;
+    public TextField txt_bk_st;
     public TableView<Book> tbl_bk;
     public AnchorPane bk_root;
-    public JFXButton btn_add;
-//    public JFXButton btn_dlt;
-//    public JFXButton btn_new;
-//    public ImageView img_back;
+    public Button btn_add;
 
-    // JDBC variables
     private Connection connection;
     private PreparedStatement selectAll;
     private PreparedStatement selectByID;
@@ -50,6 +41,14 @@ public class BookController {
     private PreparedStatement insertBook;
     private PreparedStatement updateBook;
     private PreparedStatement deleteBook;
+
+    private static final String SELECT_ALL_QUERY = "SELECT * FROM book_detail";
+    private static final String SELECT_BY_ID_QUERY = "SELECT * FROM book_detail WHERE id = ?";
+    private static final String NEW_ID_QUERY = "SELECT id FROM book_detail";
+    private static final String INSERT_BOOK_QUERY = "INSERT INTO book_detail VALUES (?, ?, ?, ?)";
+    private static final String UPDATE_BOOK_QUERY = "UPDATE book_detail SET title = ?, author = ?, status = ? WHERE id = ?";
+    private static final String DELETE_BOOK_QUERY = "DELETE FROM book_detail WHERE id = ?";
+    private static final String CHECK_BOOK_STATUS_QUERY = "SELECT status FROM book_detail WHERE id = ?";
 
     public void initialize() {
         txt_bk_id.setDisable(true);
@@ -61,12 +60,12 @@ public class BookController {
 
         try {
             connection = DbConnection.getInstance().getConnection();
-            selectAll = connection.prepareStatement("SELECT * FROM book_detail");
-            updateBook = connection.prepareStatement("UPDATE book_detail SET title = ?, author = ?, status = ? WHERE id = ?");
-            selectByID = connection.prepareStatement("SELECT * FROM book_detail WHERE id = ?");
-            insertBook = connection.prepareStatement("INSERT INTO book_detail VALUES (?, ?, ?, ?)");
-            newIdQuery = connection.prepareStatement("SELECT id FROM book_detail");
-            deleteBook = connection.prepareStatement("DELETE FROM book_detail WHERE id = ?");
+            selectAll = connection.prepareStatement(SELECT_ALL_QUERY);
+            updateBook = connection.prepareStatement(UPDATE_BOOK_QUERY);
+            selectByID = connection.prepareStatement(SELECT_BY_ID_QUERY);
+            insertBook = connection.prepareStatement(INSERT_BOOK_QUERY);
+            newIdQuery = connection.prepareStatement(NEW_ID_QUERY);
+            deleteBook = connection.prepareStatement(DELETE_BOOK_QUERY);
 
             loadTableData();
         } catch (SQLException e) {
@@ -147,39 +146,50 @@ public class BookController {
     }
 
     public void btn_Add(ActionEvent actionEvent) {
+        System.out.println("Button clicked");
+        if (validateInputs()) {
+            try {
+                if (btn_add.getText().equals("Add")) {
+                    insertBook.setString(1, txt_bk_id.getText());
+                    insertBook.setString(2, txt_bk_title.getText());
+                    insertBook.setString(3, txt_bk_auth.getText());
+                    insertBook.setString(4, txt_bk_st.getText());
+                    executeUpdate(insertBook, "Book added successfully.");
+                } else {
+                    updateBook.setString(1, txt_bk_title.getText());
+                    updateBook.setString(2, txt_bk_auth.getText());
+                    updateBook.setString(3, txt_bk_st.getText());
+                    updateBook.setString(4, txt_bk_id.getText());
+                    executeUpdate(updateBook, "Book updated successfully.");
+                }
+                refreshTable();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private boolean validateInputs() {
         if (txt_bk_id.getText().isEmpty() || txt_bk_title.getText().isEmpty() || txt_bk_auth.getText().isEmpty()) {
             showAlert(Alert.AlertType.ERROR, "Please fill in all details.");
-            return;
+            return false;
         }
 
         if (!txt_bk_title.getText().matches("^\\b([A-Za-z.]+\\s?)+$") || !txt_bk_auth.getText().matches("^\\b([A-Za-z.]+\\s?)+$")) {
             showAlert(Alert.AlertType.ERROR, "Enter Valid Name.");
-            return;
+            return false;
         }
+        return true;
+    }
 
-        try {
-            if (btn_add.getText().equals("Add")) {
-                insertBook.setString(1, txt_bk_id.getText());
-                insertBook.setString(3, txt_bk_title.getText());
-                insertBook.setString(2, txt_bk_auth.getText());
-                insertBook.setString(4, txt_bk_st.getText());
-                int affectedRows = insertBook.executeUpdate();
-                if (affectedRows > 0) {
-                    showAlert(Alert.AlertType.INFORMATION, "Book added successfully.");
-                }
-            } else {
-                updateBook.setString(1, txt_bk_title.getText());
-                updateBook.setString(2, txt_bk_auth.getText());
-                updateBook.setString(3, txt_bk_st.getText());
-                updateBook.setString(4, txt_bk_id.getText());
-                int affectedRows = updateBook.executeUpdate();
-                if (affectedRows > 0) {
-                    showAlert(Alert.AlertType.INFORMATION, "Book updated successfully.");
-                }
-            }
-            refreshTable();
-        } catch (SQLException e) {
-            e.printStackTrace();
+    private void executeUpdate(PreparedStatement preparedStatement, String successMessage) throws SQLException {
+        int affectedRows = preparedStatement.executeUpdate();
+        System.out.println(affectedRows);
+        if (affectedRows > 0) {
+            System.out.println(successMessage);
+            showAlert(Alert.AlertType.INFORMATION, successMessage);
+        } else {
+            System.out.println("No rows affected.");
         }
     }
 
@@ -191,7 +201,6 @@ public class BookController {
         }
 
         try {
-            // Check if the book is available
             if (!isBookAvailable(selectedBook.getId())) {
                 showAlert(Alert.AlertType.ERROR, "The book cannot be deleted as it is currently unavailable.");
                 return;
@@ -209,8 +218,7 @@ public class BookController {
     }
 
     private boolean isBookAvailable(String bookId) throws SQLException {
-        String sql = "SELECT status FROM book_detail WHERE id = ?";
-        try (PreparedStatement pstm = connection.prepareStatement(sql)) {
+        try (PreparedStatement pstm = connection.prepareStatement(CHECK_BOOK_STATUS_QUERY)) {
             pstm.setString(1, bookId);
             try (ResultSet rs = pstm.executeQuery()) {
                 if (rs.next()) {

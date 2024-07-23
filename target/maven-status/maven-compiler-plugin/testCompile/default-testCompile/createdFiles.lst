@@ -1,0 +1,7 @@
+com\example\lms\db\DBTest.class
+com\example\lms\db\DbConnectionTest.class
+com\example\lms\model\PatronTest.class
+com\example\lms\model\BookIssuedTest.class
+com\example\lms\model\BookReturnTest.class
+com\example\lms\model\BookTest.class
+com\example\lms\controller\BookControllerTest.class

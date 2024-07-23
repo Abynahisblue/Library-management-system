@@ -70,6 +70,10 @@ public class DbConnection {
         return dbConnection;
     }
 
+    public Connection setConnection(Connection connection){
+        return this.connection;
+    }
+
     public Connection getConnection() {
         return connection;
     }
