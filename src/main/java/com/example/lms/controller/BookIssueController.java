@@ -1,43 +1,34 @@
 package com.example.lms.controller;
 
-
 import com.example.lms.db.DB;
-import com.example.lms.db.DbConnection;
 import com.example.lms.model.Book;
 import com.example.lms.model.BookIssued;
 import com.example.lms.model.Patron;
+import com.example.lms.services.BookIssueService;
+import javafx.animation.ScaleTransition;
+import javafx.animation.TranslateTransition;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.effect.DropShadow;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-import javafx.animation.TranslateTransition;
-import javafx.scene.layout.AnchorPane;
-import javafx.scene.image.ImageView;
-import javafx.scene.effect.DropShadow;
-import javafx.scene.paint.Color;
-import javafx.animation.ScaleTransition;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.DatePicker;
-import javafx.scene.control.TextField;
 
 import java.io.IOException;
 import java.net.URL;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.LinkedList;
+import java.util.List;
 
 public class BookIssueController {
     public TextField txt_issid;
@@ -49,43 +40,28 @@ public class BookIssueController {
     public TableView<BookIssued> bk_issue_tbl;
     public AnchorPane bk_iss;
 
-    private Connection connection;
-    private PreparedStatement selectAll;
+    private BookIssueService bookIssueService;
 
-    public void initialize()  {
+    public void initialize() {
         DB.loadBooks();
         DB.loadPatrons();
         DB.loadBooksIssued();
-        // Initialize table columns
+
         bk_issue_tbl.getColumns().get(0).setCellValueFactory(new PropertyValueFactory<>("issueId"));
         bk_issue_tbl.getColumns().get(1).setCellValueFactory(new PropertyValueFactory<>("date"));
         bk_issue_tbl.getColumns().get(2).setCellValueFactory(new PropertyValueFactory<>("patronId"));
         bk_issue_tbl.getColumns().get(3).setCellValueFactory(new PropertyValueFactory<>("bookId"));
 
         try {
-            connection = DbConnection.getInstance().getConnection();
-            selectAll = connection.prepareStatement("SELECT * FROM issue_table");
+            bookIssueService = new BookIssueService();
             loadTableData();
-        }catch(SQLException e){
+        } catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();
         }
-
-        // Set items for the table
-        bk_issue_tbl.setItems(FXCollections.observableList(DB.bookIssued));
-
-        // Populate ComboBoxes
-//        mem_is_id.getItems();
-//        book_id.getItems();
-
-
-        mem_is_id.getSelectionModel().clearSelection();
-        book_id.getSelectionModel().clearSelection();
-
 
         mem_is_id.setItems(FXCollections.observableList(DB.patrons.stream().map(Patron::getId).distinct().toList()));
         book_id.setItems(FXCollections.observableList(DB.books.stream().map(Book::getId).distinct().toList()));
 
-        // Add listener to member ComboBox
         mem_is_id.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<String>() {
             @Override
             public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
@@ -101,7 +77,6 @@ public class BookIssueController {
                 }
             }
         });
-
 
         book_id.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<String>() {
             @Override
@@ -144,75 +119,23 @@ public class BookIssueController {
             String issueDate = txt_isu_date.getValue().toString();
 
             // Check if the book is available
-            if (!isBookAvailable(bookId)) {
+            if (!bookIssueService.isBookAvailable(bookId)) {
                 Alert alert = new Alert(Alert.AlertType.ERROR, "The book is currently unavailable.", ButtonType.OK);
                 alert.showAndWait();
                 return;
             }
 
             BookIssued newIssuedBook = new BookIssued(issueId, issueDate, patronId, bookId);
-            DB.bookIssued.add(newIssuedBook);
+            bookIssueService.addBookIssue(newIssuedBook);
+            bookIssueService.updateBookStatusToUnavailable(issueId);
 
-            String insertSQL = "INSERT INTO issue_table (issueId, date, patronId, bookId) VALUES (?, ?, ?, ?)";
-            try (PreparedStatement insertStatement = connection.prepareStatement(insertSQL)) {
-                insertStatement.setString(1, issueId);
-                insertStatement.setString(2, issueDate);
-                insertStatement.setString(3, patronId);
-                insertStatement.setString(4, bookId);
-
-                int affectedRows = insertStatement.executeUpdate();
-                if (affectedRows > 0) {
-                    updateBookStatusToUnavailable(issueId);
-
-                    Alert successAlert = new Alert(Alert.AlertType.INFORMATION, "Book issued successfully!", ButtonType.OK);
-                    successAlert.showAndWait();
-                    refreshTable();
-                } else {
-                    Alert failureAlert = new Alert(Alert.AlertType.ERROR, "Failed to issue book. Please try again.", ButtonType.OK);
-                    failureAlert.showAndWait();
-                }
-            }
+            Alert successAlert = new Alert(Alert.AlertType.INFORMATION, "Book issued successfully!", ButtonType.OK);
+            successAlert.showAndWait();
+            refreshTable();
 
             clearFields();
         } catch (Exception ex) {
             ex.printStackTrace();
-        }
-    }
-
-    private void updateBookStatusToUnavailable(String issueID) throws SQLException {
-        String bookId = getBookIdFromIssue(issueID);
-        String sql = "UPDATE book_detail SET status = 'Unavailable' WHERE id = ?";
-        try (PreparedStatement pstm = connection.prepareStatement(sql)) {
-            pstm.setString(1, bookId);
-            pstm.executeUpdate();
-        }
-    }
-    private String getBookIdFromIssue(String issueID) throws SQLException {
-        String sql = "SELECT bookId FROM issue_table WHERE issueId = ?";
-        try (PreparedStatement pstm = connection.prepareStatement(sql)) {
-            pstm.setString(1, issueID);
-            try (ResultSet rs = pstm.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getString("bookId");
-                } else {
-                    throw new SQLException("Issue ID not found: " + issueID);
-                }
-            }
-        }
-    }
-
-    private boolean isBookAvailable(String bookId) throws SQLException {
-        String sql = "SELECT status FROM book_detail WHERE id = ?";
-        try (PreparedStatement pstm = connection.prepareStatement(sql)) {
-            pstm.setString(1, bookId);
-            try (ResultSet rs = pstm.executeQuery()) {
-                if (rs.next()) {
-                    String status = rs.getString("status");
-                    return "Available".equalsIgnoreCase(status);
-                } else {
-                    throw new SQLException("Book ID not found: " + bookId);
-                }
-            }
         }
     }
 
@@ -225,31 +148,23 @@ public class BookIssueController {
         }
 
         try {
-            DB.bookIssued.remove(selectedBook);
+            bookIssueService.deleteBookIssue(selectedBook.getIssueId());
 
             Alert successAlert = new Alert(Alert.AlertType.INFORMATION, "Book issue record deleted successfully!", ButtonType.OK);
             successAlert.showAndWait();
+            refreshTable();
         } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
 
     private void loadTableData() {
-        DB.bookIssued.clear();
-        ObservableList<BookIssued> booksIssued = FXCollections.observableList(DB.bookIssued);
-        try (ResultSet rst = selectAll.executeQuery()) {
-            while (rst.next()) {
-                booksIssued.add(new BookIssued(
-                        rst.getString("issueId"),
-                        rst.getString("date"),
-                        rst.getString("patronId"),
-                        rst.getString("bookId")
-                ));
-            }
+        try {
+            List<BookIssued> booksIssued = bookIssueService.getAllBooksIssued();
+            bk_issue_tbl.setItems(FXCollections.observableList(booksIssued));
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        bk_issue_tbl.setItems(booksIssued);
     }
 
     public void back_click(MouseEvent event){
@@ -288,8 +203,7 @@ public class BookIssueController {
         }
     }
 
-    private void refreshTable() throws SQLException {
-        bk_issue_tbl.getItems().clear();
+    private void refreshTable() {
         try {
             initialize();
         } catch (Exception e) {

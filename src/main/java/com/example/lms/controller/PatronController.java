@@ -1,7 +1,7 @@
 package com.example.lms.controller;
 
-import com.example.lms.db.DbConnection;
 import com.example.lms.model.Patron;
+import com.example.lms.services.PatronService;
 import javafx.animation.ScaleTransition;
 import javafx.animation.TranslateTransition;
 import javafx.beans.value.ChangeListener;
@@ -24,10 +24,8 @@ import javafx.util.Duration;
 
 import java.io.IOException;
 import java.net.URL;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 
 public class PatronController {
 
@@ -41,17 +39,11 @@ public class PatronController {
     public Button btn_new;
     public Button btn_add;
 
-    // JDBC
-    private Connection connection;
-    private PreparedStatement newIdQuery;
-    private PreparedStatement addToTable;
-    private PreparedStatement updateQuery;
-    private PreparedStatement select_patronID;
+    private PatronService patronService;
 
-    public void initialize() throws ClassNotFoundException {
+    public void initialize() {
         // Disable id field
         mem_id.setDisable(true);
-        Class.forName("com.mysql.cj.jdbc.Driver");
 
         // Set table columns
         mem_tbl.getColumns().get(0).setCellValueFactory(new PropertyValueFactory<>("id"));
@@ -60,24 +52,9 @@ public class PatronController {
         mem_tbl.getColumns().get(3).setCellValueFactory(new PropertyValueFactory<>("contact"));
 
         try {
-            connection = DbConnection.getInstance().getConnection();
-            ObservableList<Patron> members = FXCollections.observableArrayList();
-            PreparedStatement select_all = connection.prepareStatement("SELECT * FROM member_detail");
-            select_patronID = connection.prepareStatement("SELECT * FROM member_detail WHERE id=?");
-            newIdQuery = connection.prepareStatement("SELECT id FROM member_detail");
-            addToTable = connection.prepareStatement("INSERT INTO member_detail VALUES (?,?,?,?)");
-            updateQuery = connection.prepareStatement("UPDATE member_detail SET name=?, address=?, contact=? WHERE id=?");
-            ResultSet rst = select_all.executeQuery();
-            while (rst.next()) {
-                members.add(new Patron(
-                        rst.getString(1),
-                        rst.getString(2),
-                        rst.getString(3),
-                        rst.getString(4)
-                ));
-            }
-            mem_tbl.setItems(members);
-        } catch (SQLException e) {
+            patronService = new PatronService();
+            loadTableData();
+        } catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();
         }
 
@@ -87,13 +64,12 @@ public class PatronController {
                 if (newValue != null) {
                     Patron selectedItem = mem_tbl.getSelectionModel().getSelectedItem();
                     try {
-                        select_patronID.setString(1, selectedItem.getId());
-                        ResultSet rst = select_patronID.executeQuery();
-                        if (rst.next()) {
-                            mem_id.setText(rst.getString(1));
-                            mem_name.setText(rst.getString(2));
-                            mem_address.setText(rst.getString(3));
-                            mem_num.setText(rst.getString(4));
+                        Patron patron = patronService.getPatronById(selectedItem.getId());
+                        if (patron != null) {
+                            mem_id.setText(patron.getId());
+                            mem_name.setText(patron.getName());
+                            mem_address.setText(patron.getAddress());
+                            mem_num.setText(patron.getContact());
                             mem_id.setDisable(true);
                             btn_add.setText("Update");
                         }
@@ -105,7 +81,17 @@ public class PatronController {
         });
     }
 
-    // Button new action
+    private void loadTableData() {
+        ObservableList<Patron> members = FXCollections.observableArrayList();
+        try {
+            List<Patron> patrons = patronService.getAllPatrons();
+            members.addAll(patrons);
+            mem_tbl.setItems(members);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void btn_new(ActionEvent actionEvent) throws SQLException {
         mem_name.clear();
         mem_address.clear();
@@ -113,31 +99,10 @@ public class PatronController {
         btn_add.setText("Add");
         mem_id.setDisable(false);
 
-        ResultSet rst = newIdQuery.executeQuery();
-
-        String ids = null;
-        int maxId = 0;
-
-        while (rst.next()) {
-            ids = rst.getString(1);
-            int id = Integer.parseInt(ids.replace("M", ""));
-            if (id > maxId) {
-                maxId = id;
-            }
-        }
-        maxId = maxId + 1;
-        String id = "";
-        if (maxId < 10) {
-            id = "M00" + maxId;
-        } else if (maxId < 100) {
-            id = "M0" + maxId;
-        } else {
-            id = "M" + maxId;
-        }
+        String id = patronService.generateNewId();
         mem_id.setText(id);
     }
 
-    // Button add action
     public void btn_add(ActionEvent actionEvent) throws SQLException {
         ObservableList<Patron> members = mem_tbl.getItems();
         // Is empty
@@ -157,44 +122,16 @@ public class PatronController {
             return;
         }
 
-        // Save & update
+        Patron patron = new Patron(mem_id.getText(), mem_name.getText(), mem_address.getText(), mem_num.getText());
+
         if (btn_add.getText().equals("Add")) {
-            addToTable.setString(1, mem_id.getText());
-            addToTable.setString(2, mem_name.getText());
-            addToTable.setString(3, mem_address.getText());
-            addToTable.setString(4, mem_num.getText());
-            int affectedRows = addToTable.executeUpdate();
-
-            if (affectedRows > 0) {
-                System.out.println("Data load successful");
-            } else {
-                System.out.println("Something went wrong");
-            }
+            patronService.addPatron(patron);
         } else {
-            if (btn_add.getText().equals("Update")) {
-                updateQuery.setString(1, mem_name.getText());
-                updateQuery.setString(2, mem_address.getText());
-                updateQuery.setString(3, mem_num.getText());
-                updateQuery.setString(4, mem_id.getText());
-                int affected = updateQuery.executeUpdate();
-
-                if (affected > 0) {
-                    Alert alert = new Alert(Alert.AlertType.INFORMATION,
-                            "Record updated!!",
-                            ButtonType.OK);
-                    alert.showAndWait();
-                } else {
-                    Alert alert = new Alert(Alert.AlertType.ERROR,
-                            "Update error!",
-                            ButtonType.OK);
-                    alert.showAndWait();
-                }
-            }
+            patronService.updatePatron(patron);
         }
         refreshTable();
     }
 
-    // Button delete action
     public void btn_dtl(ActionEvent actionEvent) throws SQLException {
         Patron selectedItem = mem_tbl.getSelectionModel().getSelectedItem();
         if (selectedItem == null) {
@@ -204,27 +141,14 @@ public class PatronController {
             alert.showAndWait();
             return;
         } else {
-            PreparedStatement deleteQuery = connection.prepareStatement("DELETE FROM member_detail WHERE id=?");
-            deleteQuery.setString(1, selectedItem.getId());
-
-            int affected = deleteQuery.executeUpdate();
-            if (affected > 0) {
-                Alert alert = new Alert(Alert.AlertType.INFORMATION,
-                        "Record deleted!!",
-                        ButtonType.OK);
-                alert.showAndWait();
-            }
+            patronService.deletePatron(selectedItem.getId());
         }
         refreshTable();
     }
 
-    void refreshTable() throws SQLException {
+    void refreshTable() {
         mem_tbl.getItems().clear();
-        try {
-            initialize();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
+        loadTableData();
     }
 
     public void playMouseEnterAnimation(MouseEvent event) {

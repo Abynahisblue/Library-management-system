@@ -1,9 +1,6 @@
 package com.example.lms.db;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
+import java.sql.*;
 
 public class DbConnection {
     private static DbConnection dbConnection;
@@ -13,7 +10,7 @@ public class DbConnection {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver"); // Updated the driver class name
             connection = DriverManager.getConnection(
-                    "jdbc:mysql://localhost:3306/library?createDatabaseIfNotExist=true&allowMultiQueries=true",
+                    "jdbc:mysql://localhost:3306/library",
                     "root",
                     "Sandy_@98"
             );
@@ -70,11 +67,22 @@ public class DbConnection {
         return dbConnection;
     }
 
+    public static Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(
+                "jdbc:mysql://localhost:3306/library",
+                "root",
+                "Sandy_@98"
+        );
+    }
+
+    public static void setInstance(Connection mockConnection) {
+    }
+
     public Connection setConnection(Connection connection){
         return this.connection;
     }
 
-    public Connection getConnection() {
-        return connection;
+    public void close() {
+
     }
 }

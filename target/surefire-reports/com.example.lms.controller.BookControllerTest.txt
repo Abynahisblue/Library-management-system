@@ -1,7 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.example.lms.controller.BookControllerTest
--------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.037 s <<< FAILURE! - in com.example.lms.controller.BookControllerTest
-com.example.lms.controller.BookControllerTest  Time elapsed: 0.037 s  <<< ERROR!
-java.lang.reflect.InaccessibleObjectException: Unable to make public static void com.example.lms.controller.BookControllerTest.setupTestDatabase() throws java.sql.SQLException accessible: module com.example.lms does not "opens com.example.lms.controller" to unnamed module @55fe41ea
-

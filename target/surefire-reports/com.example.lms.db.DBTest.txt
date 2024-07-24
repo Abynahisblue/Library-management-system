@@ -1,7 +1,7 @@
 -------------------------------------------------------------------------------
 Test set: com.example.lms.db.DBTest
 -------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.002 s <<< FAILURE! - in com.example.lms.db.DBTest
-com.example.lms.db.DBTest  Time elapsed: 0.002 s  <<< ERROR!
-java.lang.reflect.InaccessibleObjectException: Unable to make static void com.example.lms.db.DBTest.setUp() throws java.sql.SQLException accessible: module com.example.lms does not "opens com.example.lms.db" to unnamed module @55fe41ea
+Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.004 s <<< FAILURE! - in com.example.lms.db.DBTest
+com.example.lms.db.DBTest  Time elapsed: 0.004 s  <<< ERROR!
+java.lang.reflect.InaccessibleObjectException: Unable to make static void com.example.lms.db.DBTest.setUp() throws java.sql.SQLException accessible: module com.example.lms does not "opens com.example.lms.db" to unnamed module @55141def
 

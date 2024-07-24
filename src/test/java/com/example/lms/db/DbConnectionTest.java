@@ -25,14 +25,14 @@ class DbConnectionTest {
     }
 
     @BeforeEach
-    public void initializeDatabase() {
+    public void initializeDatabase() throws SQLException {
         // Initialize the database by creating the instance
         DbConnection dbConnection = DbConnection.getInstance();
         dbConnection.getConnection();
     }
 
     @Test
-    void testConnectionEstablished() {
+    void testConnectionEstablished() throws SQLException {
         // Verify the connection is established
         DbConnection dbConnection = DbConnection.getInstance();
         assertNotNull(dbConnection.getConnection(), "Connection should not be null");

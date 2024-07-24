@@ -1,10 +1,7 @@
 package com.example.lms.controller;
 
-
-
-import com.example.lms.db.DB;
-import com.example.lms.db.DbConnection;
 import com.example.lms.model.BookReturn;
+import com.example.lms.services.BookReturnService;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.animation.ScaleTransition;
@@ -26,9 +23,8 @@ import javafx.util.Duration;
 
 import java.io.IOException;
 import java.net.URL;
-import java.sql.*;
+import java.sql.SQLException;
 import java.time.LocalDate;
-import java.util.concurrent.TimeUnit;
 
 public class BookReturnController {
     public AnchorPane Return_root;
@@ -38,25 +34,29 @@ public class BookReturnController {
     public DatePicker txt_rt_date;
     public TableView<BookReturn> rt_tbl;
     public ComboBox<String> cmb_issue_id;
-    private Connection connection;
+    private BookReturnService bookReturnService;
 
     public void initialize() {
-        initializeTableColumns();
-        loadReturnDetails();
-        loadIssueIds();
-        DB.loadBooksIssued();
+        try {
+            bookReturnService = new BookReturnService();
+            initializeTableColumns();
+            loadReturnDetails();
+            loadIssueIds();
 
-        cmb_issue_id.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue != null) {
-                updateIssueDate(newValue);
-            }
-        });
+            cmb_issue_id.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+                if (newValue != null) {
+                    updateIssueDate(newValue);
+                }
+            });
 
-        txt_rt_date.valueProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue != null) {
-                calculateFine();
-            }
-        });
+            txt_rt_date.valueProperty().addListener((observable, oldValue, newValue) -> {
+                if (newValue != null) {
+                    calculateFine();
+                }
+            });
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     private void initializeTableColumns() {
@@ -67,16 +67,8 @@ public class BookReturnController {
     }
 
     private void loadReturnDetails() {
-        ObservableList<BookReturn> returns = FXCollections.observableArrayList();
         try {
-            connection = DbConnection.getInstance().getConnection();
-            String sql = "SELECT * FROM return_detail";
-            PreparedStatement pstm = connection.prepareStatement(sql);
-            ResultSet rst = pstm.executeQuery();
-            while (rst.next()) {
-                float fine = rst.getFloat("fine");
-                returns.add(new BookReturn(rst.getString("id"), rst.getString("issuedDate"), rst.getString("returnedDate"), fine));
-            }
+            ObservableList<BookReturn> returns = bookReturnService.getAllReturns();
             rt_tbl.setItems(returns);
         } catch (SQLException e) {
             e.printStackTrace();
@@ -84,15 +76,9 @@ public class BookReturnController {
     }
 
     private void loadIssueIds() {
-        ObservableList<String> issueIds = cmb_issue_id.getItems();
         try {
-            connection = DbConnection.getInstance().getConnection();
-            String sql = "SELECT issueId FROM issue_table";
-            PreparedStatement pstm = connection.prepareStatement(sql);
-            ResultSet rst = pstm.executeQuery();
-            while (rst.next()) {
-                issueIds.add(rst.getString("issueId"));
-            }
+            ObservableList<String> issueIds = bookReturnService.getIssueIds();
+            cmb_issue_id.setItems(issueIds);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -100,12 +86,9 @@ public class BookReturnController {
 
     private void updateIssueDate(String issueId) {
         try {
-            String sql = "SELECT date FROM issue_table WHERE issueId = ?";
-            PreparedStatement pstm = connection.prepareStatement(sql);
-            pstm.setString(1, issueId);
-            ResultSet rst = pstm.executeQuery();
-            if (rst.next()) {
-                txt_issue_date.setText(rst.getString("date"));
+            String issueDate = bookReturnService.getIssueDate(issueId);
+            if (issueDate != null) {
+                txt_issue_date.setText(issueDate);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -116,12 +99,7 @@ public class BookReturnController {
         LocalDate returnedDate = txt_rt_date.getValue();
         LocalDate issuedDate = LocalDate.parse(txt_issue_date.getText());
 
-        long daysBetween = TimeUnit.DAYS.convert(
-                Date.valueOf(returnedDate).getTime() - Date.valueOf(issuedDate).getTime(),
-                TimeUnit.MILLISECONDS
-        );
-
-        float fine = daysBetween > 14 ? (daysBetween - 14) * 15 : 0;
+        float fine = bookReturnService.calculateFine(issuedDate, returnedDate);
         txt_fine.setText(Float.toString(fine));
     }
 
@@ -144,44 +122,14 @@ public class BookReturnController {
             String returnedDate = txt_rt_date.getValue().toString();
             String fine = txt_fine.getText();
 
-            String sql = "INSERT INTO return_detail (id, issuedDate, returnedDate, fine) VALUES (?, ?, ?, ?)";
-            PreparedStatement pstm = connection.prepareStatement(sql);
-            pstm.setString(1, issueID);
-            pstm.setString(2, issuedDate);
-            pstm.setString(3, returnedDate);
-            pstm.setString(4, fine);
-            int affectedRows = pstm.executeUpdate();
+            bookReturnService.addReturn(issueID, issuedDate, returnedDate, fine);
 
-            if (affectedRows > 0) {
-                updateBookStatus(issueID);
-                showAlert(Alert.AlertType.INFORMATION, "Return successfully recorded and status updated.");
-                refreshTable();
-                clearFields();
-            } else {
-                showAlert(Alert.AlertType.ERROR, "Something went wrong. Please try again.");
-            }
+            showAlert(Alert.AlertType.INFORMATION, "Return successfully recorded and status updated.");
+            refreshTable();
+            clearFields();
         } catch (SQLException e) {
             e.printStackTrace();
         }
-    }
-
-    private void updateBookStatus(String issueID) throws SQLException {
-        String bookId = getBookIdFromIssue(issueID);
-        String sql = "UPDATE book_detail SET status = 'Available' WHERE id = ?";
-        PreparedStatement pstm = connection.prepareStatement(sql);
-        pstm.setString(1, bookId);
-        pstm.executeUpdate();
-    }
-
-    private String getBookIdFromIssue(String issueID) throws SQLException {
-        String sql = "SELECT bookId FROM issue_table WHERE issueId = ?";
-        PreparedStatement pstm = connection.prepareStatement(sql);
-        pstm.setString(1, issueID);
-        ResultSet rst = pstm.executeQuery();
-        if (rst.next()) {
-            return rst.getString("bookId");
-        }
-        return null;
     }
 
     private void refreshTable() {
@@ -232,5 +180,14 @@ public class BookReturnController {
         Alert alert = new Alert(alertType, message, ButtonType.OK);
         alert.showAndWait();
     }
-}
 
+    public void closeServiceConnection() {
+        try {
+            if (bookReturnService != null) {
+                bookReturnService.closeConnection();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+}
