@@ -1,0 +1,12 @@
+com\example\lms\db\DBTest.class
+com\example\lms\services\BookSearchServiceTest.class
+com\example\lms\model\PatronTest.class
+com\example\lms\model\BookReturnTest.class
+com\example\lms\model\BookTest.class
+com\example\lms\HelloApplicationTest.class
+com\example\lms\services\BookIssueServiceTest.class
+com\example\lms\db\DbConnectionTest.class
+com\example\lms\services\BookServiceTest.class
+com\example\lms\model\BookIssuedTest.class
+com\example\lms\services\PatronServiceTest.class
+com\example\lms\services\BookReturnServiceTest.class

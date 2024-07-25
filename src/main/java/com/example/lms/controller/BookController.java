@@ -1,9 +1,7 @@
 package com.example.lms.controller;
 
-import com.example.lms.db.DbConnection;
 import com.example.lms.model.Book;
-import com.jfoenix.controls.JFXButton;
-import com.jfoenix.controls.JFXTextField;
+import com.example.lms.services.BookService;
 import javafx.animation.ScaleTransition;
 import javafx.animation.TranslateTransition;
 import javafx.collections.FXCollections;
@@ -12,10 +10,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.image.ImageView;
@@ -28,30 +23,23 @@ import javafx.util.Duration;
 import java.io.IOException;
 import java.net.URL;
 import java.sql.*;
-import java.util.Optional;
+import java.util.List;
 
 public class BookController {
-    public JFXTextField txt_bk_id;
-    public JFXTextField txt_bk_title;
-    public JFXTextField txt_bk_auth;
-    public JFXTextField txt_bk_st;
+    public TextField txt_bk_id;
+    public TextField txt_bk_title;
+    public TextField txt_bk_auth;
+    public TextField txt_bk_st;
     public TableView<Book> tbl_bk;
     public AnchorPane bk_root;
-    public JFXButton btn_add;
-//    public JFXButton btn_dlt;
-//    public JFXButton btn_new;
-//    public ImageView img_back;
+    public Button btn_add;
 
-    // JDBC variables
-    private Connection connection;
-    private PreparedStatement selectAll;
-    private PreparedStatement selectByID;
-    private PreparedStatement newIdQuery;
-    private PreparedStatement insertBook;
-    private PreparedStatement updateBook;
-    private PreparedStatement deleteBook;
+    private final BookService bookService = new BookService(DriverManager.getConnection("jdbc:mysql://localhost:3306/library","root","Sandy_@98"));
 
-    public void initialize() {
+    public BookController() throws SQLException {
+    }
+
+    public void initialize() throws SQLException {
         txt_bk_id.setDisable(true);
 
         tbl_bk.getColumns().get(0).setCellValueFactory(new PropertyValueFactory<>("id"));
@@ -59,19 +47,7 @@ public class BookController {
         tbl_bk.getColumns().get(2).setCellValueFactory(new PropertyValueFactory<>("author"));
         tbl_bk.getColumns().get(3).setCellValueFactory(new PropertyValueFactory<>("status"));
 
-        try {
-            connection = DbConnection.getInstance().getConnection();
-            selectAll = connection.prepareStatement("SELECT * FROM book_detail");
-            updateBook = connection.prepareStatement("UPDATE book_detail SET title = ?, author = ?, status = ? WHERE id = ?");
-            selectByID = connection.prepareStatement("SELECT * FROM book_detail WHERE id = ?");
-            insertBook = connection.prepareStatement("INSERT INTO book_detail VALUES (?, ?, ?, ?)");
-            newIdQuery = connection.prepareStatement("SELECT id FROM book_detail");
-            deleteBook = connection.prepareStatement("DELETE FROM book_detail WHERE id = ?");
-
-            loadTableData();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        loadTableData();
 
         tbl_bk.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
@@ -82,37 +58,24 @@ public class BookController {
 
     private void loadTableData() {
         ObservableList<Book> books = FXCollections.observableArrayList();
-        try (ResultSet rst = selectAll.executeQuery()) {
-            while (rst.next()) {
-                books.add(new Book(
-                        rst.getString("id"),
-                        rst.getString("title"),
-                        rst.getString("author"),
-                        rst.getString("status")
-                ));
-            }
+        try {
+            List<Book> bookList = BookService.getAllBooks();
+            books.addAll(bookList);
         } catch (SQLException e) {
             e.printStackTrace();
         }
         tbl_bk.setItems(books);
     }
 
+
     private void loadSelectedBookData(Book book) {
-        try {
-            selectByID.setString(1, book.getId());
-            try (ResultSet rst = selectByID.executeQuery()) {
-                if (rst.next()) {
-                    txt_bk_id.setText(rst.getString("id"));
-                    txt_bk_title.setText(rst.getString("title"));
-                    txt_bk_auth.setText(rst.getString("author"));
-                    txt_bk_st.setText(rst.getString("status"));
+                    txt_bk_id.setText(book.getId());
+                    txt_bk_title.setText(book.getTitle());
+                    txt_bk_auth.setText(book.getAuthor());
+                    txt_bk_st.setText(book.getStatus());
                     txt_bk_id.setDisable(true);
                     btn_add.setText("Update");
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+
     }
 
     public void btn_new(ActionEvent actionEvent) {
@@ -125,63 +88,45 @@ public class BookController {
         txt_bk_title.requestFocus();
 
         try {
-            String newId = generateNewId();
+            String newId = BookService.generateNewId();
             txt_bk_id.setText(newId);
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    private String generateNewId() throws SQLException {
-        int maxId = 0;
-        try (ResultSet rst = newIdQuery.executeQuery()) {
-            while (rst.next()) {
-                int id = Integer.parseInt(rst.getString("id").replace("B", ""));
-                if (id > maxId) {
-                    maxId = id;
-                }
-            }
-        }
-        maxId++;
-        return String.format("B%03d", maxId);
-    }
+
 
     public void btn_Add(ActionEvent actionEvent) {
+        System.out.println("Button clicked");
+        if (validateInputs()) {
+            try {
+                if (btn_add.getText().equals("Add")) {
+                   showAlert(Alert.AlertType.INFORMATION,bookService.addBook(new Book(txt_bk_title.getText(),txt_bk_auth.getText(),txt_bk_st.getText(),txt_bk_id.getText())));
+                } else {
+                    showAlert(Alert.AlertType.INFORMATION,bookService.updateBook(new Book(txt_bk_title.getText(),txt_bk_auth.getText(),txt_bk_st.getText(),txt_bk_id.getText())));
+                }
+                refreshTable();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private boolean validateInputs() {
         if (txt_bk_id.getText().isEmpty() || txt_bk_title.getText().isEmpty() || txt_bk_auth.getText().isEmpty()) {
             showAlert(Alert.AlertType.ERROR, "Please fill in all details.");
-            return;
+            return false;
         }
 
         if (!txt_bk_title.getText().matches("^\\b([A-Za-z.]+\\s?)+$") || !txt_bk_auth.getText().matches("^\\b([A-Za-z.]+\\s?)+$")) {
             showAlert(Alert.AlertType.ERROR, "Enter Valid Name.");
-            return;
+            return false;
         }
-
-        try {
-            if (btn_add.getText().equals("Add")) {
-                insertBook.setString(1, txt_bk_id.getText());
-                insertBook.setString(3, txt_bk_title.getText());
-                insertBook.setString(2, txt_bk_auth.getText());
-                insertBook.setString(4, txt_bk_st.getText());
-                int affectedRows = insertBook.executeUpdate();
-                if (affectedRows > 0) {
-                    showAlert(Alert.AlertType.INFORMATION, "Book added successfully.");
-                }
-            } else {
-                updateBook.setString(1, txt_bk_title.getText());
-                updateBook.setString(2, txt_bk_auth.getText());
-                updateBook.setString(3, txt_bk_st.getText());
-                updateBook.setString(4, txt_bk_id.getText());
-                int affectedRows = updateBook.executeUpdate();
-                if (affectedRows > 0) {
-                    showAlert(Alert.AlertType.INFORMATION, "Book updated successfully.");
-                }
-            }
-            refreshTable();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        return true;
     }
+
+
 
     public void btn_dlt(ActionEvent actionEvent) {
         Book selectedBook = tbl_bk.getSelectionModel().getSelectedItem();
@@ -191,15 +136,12 @@ public class BookController {
         }
 
         try {
-            // Check if the book is available
-            if (!isBookAvailable(selectedBook.getId())) {
+            if (!bookService.isBookAvailable(selectedBook.getId())) {
                 showAlert(Alert.AlertType.ERROR, "The book cannot be deleted as it is currently unavailable.");
                 return;
             }
 
-            deleteBook.setString(1, selectedBook.getId());
-            int affectedRows = deleteBook.executeUpdate();
-            if (affectedRows > 0) {
+            if (bookService.deleteBook(selectedBook.getId()) > 0) {
                 showAlert(Alert.AlertType.INFORMATION, "Book deleted successfully.");
                 refreshTable();
             }
@@ -208,22 +150,9 @@ public class BookController {
         }
     }
 
-    private boolean isBookAvailable(String bookId) throws SQLException {
-        String sql = "SELECT status FROM book_detail WHERE id = ?";
-        try (PreparedStatement pstm = connection.prepareStatement(sql)) {
-            pstm.setString(1, bookId);
-            try (ResultSet rs = pstm.executeQuery()) {
-                if (rs.next()) {
-                    String status = rs.getString("status");
-                    return "Available".equalsIgnoreCase(status);
-                } else {
-                    throw new SQLException("Book ID not found: " + bookId);
-                }
-            }
-        }
-    }
 
-    private void refreshTable() {
+
+    private void refreshTable() throws SQLException {
         tbl_bk.getItems().clear();
         loadTableData();
     }

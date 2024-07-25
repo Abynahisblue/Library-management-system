@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BookReturnService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LMS</a> &gt; <a href="index.source.html" class="el_package">com.example.lms.services</a> &gt; <span class="el_source">BookReturnService.java</span></div><h1>BookReturnService.java</h1><pre class="source lang-java linenums">package com.example.lms.services;
+
+
+import com.example.lms.db.DbConnection;
+import com.example.lms.model.BookReturn;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+
+import java.sql.*;
+import java.time.LocalDate;
+import java.util.concurrent.TimeUnit;
+
+public class BookReturnService {
+    private final Connection connection;
+
+<span class="fc" id="L16">    public BookReturnService(Connection connection) throws SQLException {</span>
+<span class="fc" id="L17">        this.connection = connection;</span>
+<span class="fc" id="L18">    }</span>
+<span class="nc" id="L19">    public BookReturnService() throws SQLException {</span>
+<span class="nc" id="L20">        this.connection = DbConnection.getInstance().getConnection();</span>
+<span class="nc" id="L21">    }</span>
+
+
+    public ObservableList&lt;BookReturn&gt; getAllReturns() throws SQLException {
+<span class="fc" id="L25">        ObservableList&lt;BookReturn&gt; returns = FXCollections.observableArrayList();</span>
+<span class="fc" id="L26">        String sql = &quot;SELECT * FROM return_detail&quot;;</span>
+<span class="fc" id="L27">        PreparedStatement pstm = connection.prepareStatement(sql);</span>
+<span class="fc" id="L28">        ResultSet rst = pstm.executeQuery();</span>
+<span class="fc bfc" id="L29" title="All 2 branches covered.">        while (rst.next()) {</span>
+<span class="fc" id="L30">            float fine = rst.getFloat(&quot;fine&quot;);</span>
+<span class="fc" id="L31">            returns.add(new BookReturn(rst.getString(&quot;id&quot;), rst.getString(&quot;issuedDate&quot;), rst.getString(&quot;returnedDate&quot;), fine));</span>
+<span class="fc" id="L32">        }</span>
+<span class="fc" id="L33">        return returns;</span>
+    }
+
+    public ObservableList&lt;String&gt; getIssueIds() throws SQLException {
+<span class="fc" id="L37">        ObservableList&lt;String&gt; issueIds = FXCollections.observableArrayList();</span>
+<span class="fc" id="L38">        String sql = &quot;SELECT issueId FROM issue_table&quot;;</span>
+<span class="fc" id="L39">        PreparedStatement pstm = connection.prepareStatement(sql);</span>
+<span class="fc" id="L40">        ResultSet rst = pstm.executeQuery();</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">        while (rst.next()) {</span>
+<span class="fc" id="L42">            issueIds.add(rst.getString(&quot;issueId&quot;));</span>
+        }
+<span class="fc" id="L44">        return issueIds;</span>
+    }
+
+    public String getIssueDate(String issueId) throws SQLException {
+<span class="fc" id="L48">        String sql = &quot;SELECT date FROM issue_table WHERE issueId = ?&quot;;</span>
+<span class="fc" id="L49">        PreparedStatement pstm = connection.prepareStatement(sql);</span>
+<span class="fc" id="L50">        pstm.setString(1, issueId);</span>
+<span class="fc" id="L51">        ResultSet rst = pstm.executeQuery();</span>
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">        if (rst.next()) {</span>
+<span class="fc" id="L53">            return rst.getString(&quot;date&quot;);</span>
+        }
+<span class="nc" id="L55">        return null;</span>
+    }
+
+    public void addReturn(String issueID, String issuedDate, String returnedDate, String fine) throws SQLException {
+<span class="fc" id="L59">        String sql = &quot;INSERT INTO return_detail (id, issuedDate, returnedDate, fine) VALUES (?, ?, ?, ?)&quot;;</span>
+<span class="fc" id="L60">        PreparedStatement pstm = connection.prepareStatement(sql);</span>
+<span class="fc" id="L61">        pstm.setString(1, issueID);</span>
+<span class="fc" id="L62">        pstm.setString(2, issuedDate);</span>
+<span class="fc" id="L63">        pstm.setString(3, returnedDate);</span>
+<span class="fc" id="L64">        pstm.setString(4, fine);</span>
+<span class="fc" id="L65">        pstm.executeUpdate();</span>
+
+<span class="fc" id="L67">        updateBookStatus(issueID);</span>
+<span class="fc" id="L68">    }</span>
+
+    private void updateBookStatus(String issueID) throws SQLException {
+<span class="fc" id="L71">        String bookId = getBookIdFromIssue(issueID);</span>
+<span class="fc" id="L72">        String sql = &quot;UPDATE book_detail SET status = 'Available' WHERE id = ?&quot;;</span>
+<span class="fc" id="L73">        PreparedStatement pstm = connection.prepareStatement(sql);</span>
+<span class="fc" id="L74">        pstm.setString(1, bookId);</span>
+<span class="fc" id="L75">        pstm.executeUpdate();</span>
+<span class="fc" id="L76">    }</span>
+
+    private String getBookIdFromIssue(String issueID) throws SQLException {
+<span class="fc" id="L79">        String sql = &quot;SELECT bookId FROM issue_table WHERE issueId = ?&quot;;</span>
+<span class="fc" id="L80">        PreparedStatement pstm = connection.prepareStatement(sql);</span>
+<span class="fc" id="L81">        pstm.setString(1, issueID);</span>
+<span class="fc" id="L82">        ResultSet rst = pstm.executeQuery();</span>
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">        if (rst.next()) {</span>
+<span class="nc" id="L84">            return rst.getString(&quot;bookId&quot;);</span>
+        }
+<span class="fc" id="L86">        return null;</span>
+    }
+
+    public float calculateFine(LocalDate issuedDate, LocalDate returnedDate) {
+<span class="fc" id="L90">        long daysBetween = TimeUnit.DAYS.convert(</span>
+<span class="fc" id="L91">                Date.valueOf(returnedDate).getTime() - Date.valueOf(issuedDate).getTime(),</span>
+                TimeUnit.MILLISECONDS
+        );
+
+<span class="fc bfc" id="L95" title="All 2 branches covered.">        return daysBetween &gt; 14 ? (daysBetween - 14) * 15 : 0;</span>
+    }
+
+    public void closeConnection() throws SQLException {
+<span class="nc bnc" id="L99" title="All 4 branches missed.">        if (connection != null &amp;&amp; !connection.isClosed()) {</span>
+<span class="nc" id="L100">            connection.close();</span>
+        }
+<span class="nc" id="L102">    }</span>
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

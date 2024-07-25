@@ -1,6 +1,5 @@
 package com.example.lms.controller;
 
-
 import javafx.animation.ScaleTransition;
 import javafx.animation.TranslateTransition;
 import javafx.fxml.FXMLLoader;

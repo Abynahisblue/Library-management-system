@@ -13,7 +13,7 @@ import java.util.Objects;
 public class HelloApplication extends Application {
     public static void main(String[] args) throws SQLException {
         launch();
-        DbConnection.getInstance().getConnection().close();
+        DbConnection.getInstance().close();
 
     }
     @Override

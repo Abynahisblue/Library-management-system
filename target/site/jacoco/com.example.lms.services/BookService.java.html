@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BookService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LMS</a> &gt; <a href="index.source.html" class="el_package">com.example.lms.services</a> &gt; <span class="el_source">BookService.java</span></div><h1>BookService.java</h1><pre class="source lang-java linenums">package com.example.lms.services;
+
+import com.example.lms.db.DbConnection;
+import com.example.lms.model.Book;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+public class BookService {
+
+    private static Connection connection;
+    private static PreparedStatement selectAll;
+    private final PreparedStatement selectByID;
+    private static PreparedStatement newIdQuery;
+    private static PreparedStatement insertBook;
+    private static PreparedStatement updateBook;
+    private static PreparedStatement deleteBook;
+
+    private static final String SELECT_ALL_QUERY = &quot;SELECT * FROM book_detail&quot;;
+    private static final String SELECT_BY_ID_QUERY = &quot;SELECT * FROM book_detail WHERE id = ?&quot;;
+    private static final String NEW_ID_QUERY = &quot;SELECT id FROM book_detail&quot;;
+    private static final String INSERT_BOOK_QUERY = &quot;INSERT INTO book_detail VALUES (?, ?, ?, ?)&quot;;
+    private static final String UPDATE_BOOK_QUERY = &quot;UPDATE book_detail SET title = ?, author = ?, status = ? WHERE id = ?&quot;;
+    private static final String DELETE_BOOK_QUERY = &quot;DELETE FROM book_detail WHERE id = ?&quot;;
+    private static final String CHECK_BOOK_STATUS_QUERY = &quot;SELECT status FROM book_detail WHERE id = ?&quot;;
+
+
+
+
+<span class="fc" id="L34">    public BookService(Connection connection) throws SQLException {</span>
+<span class="fc" id="L35">        System.out.println(&quot;Hi from book service&quot;);</span>
+<span class="fc" id="L36">        BookService.connection = connection;</span>
+<span class="fc" id="L37">        selectAll = connection.prepareStatement(SELECT_ALL_QUERY);</span>
+<span class="fc" id="L38">        updateBook = connection.prepareStatement(UPDATE_BOOK_QUERY);</span>
+<span class="fc" id="L39">        selectByID = connection.prepareStatement(SELECT_BY_ID_QUERY);</span>
+<span class="fc" id="L40">        insertBook = connection.prepareStatement(INSERT_BOOK_QUERY);</span>
+<span class="fc" id="L41">        newIdQuery = connection.prepareStatement(NEW_ID_QUERY);</span>
+<span class="fc" id="L42">        deleteBook = connection.prepareStatement(DELETE_BOOK_QUERY);</span>
+<span class="fc" id="L43">    }</span>
+
+<span class="nc" id="L45">    public BookService() throws SQLException {</span>
+<span class="nc" id="L46">        DbConnection.getInstance();</span>
+<span class="nc" id="L47">        System.out.println(&quot;Hi from book service&quot;);</span>
+<span class="nc" id="L48">        connection = DbConnection.getConnection();</span>
+<span class="nc" id="L49">        selectAll = connection.prepareStatement(SELECT_ALL_QUERY);</span>
+<span class="nc" id="L50">        updateBook = connection.prepareStatement(UPDATE_BOOK_QUERY);</span>
+<span class="nc" id="L51">        selectByID = connection.prepareStatement(SELECT_BY_ID_QUERY);</span>
+<span class="nc" id="L52">        insertBook = connection.prepareStatement(INSERT_BOOK_QUERY);</span>
+<span class="nc" id="L53">        newIdQuery = connection.prepareStatement(NEW_ID_QUERY);</span>
+<span class="nc" id="L54">        deleteBook = connection.prepareStatement(DELETE_BOOK_QUERY);</span>
+<span class="nc" id="L55">    }</span>
+
+    // Assuming getBooks returns a List&lt;Book&gt;
+    public static List&lt;Book&gt; getAllBooks() throws SQLException {
+<span class="fc" id="L59">        List&lt;Book&gt; books = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L60">        try (ResultSet rst = selectAll.executeQuery()) {</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">            while (rst.next()) {</span>
+<span class="fc" id="L62">                books.add(new Book(</span>
+<span class="fc" id="L63">                        rst.getString(&quot;id&quot;),</span>
+<span class="fc" id="L64">                        rst.getString(&quot;title&quot;),</span>
+<span class="fc" id="L65">                        rst.getString(&quot;author&quot;),</span>
+<span class="fc" id="L66">                        rst.getString(&quot;status&quot;)</span>
+                ));
+            }
+        }
+<span class="fc" id="L70">        return books;</span>
+    }
+
+    // Ensure getBooks() method returns a mutable list
+    private static List&lt;Book&gt; getBooks() {
+<span class="nc" id="L75">        return new ArrayList&lt;&gt;(/* collection of books */);</span>
+    }
+
+    public static String generateNewId() throws SQLException {
+<span class="fc" id="L79">        int maxId = 0;</span>
+<span class="fc" id="L80">        try (ResultSet rst = newIdQuery.executeQuery()) {</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">            while (rst.next()) {</span>
+<span class="fc" id="L82">                int id = Integer.parseInt(rst.getString(&quot;id&quot;).replace(&quot;B&quot;, &quot;&quot;));</span>
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">                if (id &gt; maxId) {</span>
+<span class="fc" id="L84">                    maxId = id;</span>
+                }
+<span class="fc" id="L86">            }</span>
+        }
+<span class="fc" id="L88">        maxId++;</span>
+<span class="fc" id="L89">        return String.format(&quot;B%03d&quot;, maxId);</span>
+    }
+
+    public  String addBook(Book book) throws SQLException {
+<span class="fc" id="L93">        insertBook.setString(1, book.getId());</span>
+<span class="fc" id="L94">        insertBook.setString(2, book.getTitle());</span>
+<span class="fc" id="L95">        insertBook.setString(3, book.getAuthor());</span>
+<span class="fc" id="L96">        insertBook.setString(4, book.getStatus());</span>
+<span class="fc" id="L97">        return executeUpdate(insertBook, &quot;Book added successfully.&quot;);</span>
+    }
+    public  String updateBook(Book book) throws SQLException {
+<span class="fc" id="L100">        updateBook.setString(1, book.getId());</span>
+<span class="fc" id="L101">        updateBook.setString(2, book.getTitle());</span>
+<span class="fc" id="L102">        updateBook.setString(3, book.getAuthor());</span>
+<span class="fc" id="L103">        updateBook.setString(4, book.getStatus());</span>
+<span class="fc" id="L104">        return executeUpdate(updateBook, &quot;Book updated successfully.&quot;);</span>
+    }
+    public   int deleteBook(String selectedBookId) throws SQLException {
+<span class="fc" id="L107">        deleteBook.setString(1, selectedBookId);</span>
+<span class="fc" id="L108">        return deleteBook.executeUpdate();</span>
+    }
+
+    public  boolean isBookAvailable(String bookId) throws SQLException {
+<span class="fc" id="L112">        try (PreparedStatement pstm = connection.prepareStatement(CHECK_BOOK_STATUS_QUERY)) {</span>
+<span class="fc" id="L113">            pstm.setString(1, bookId);</span>
+<span class="fc" id="L114">            try (ResultSet rs = pstm.executeQuery()) {</span>
+<span class="pc bpc" id="L115" title="1 of 2 branches missed.">                if (rs.next()) {</span>
+<span class="fc" id="L116">                    String status = rs.getString(&quot;status&quot;);</span>
+<span class="fc" id="L117">                    return &quot;Available&quot;.equalsIgnoreCase(status);</span>
+                } else {
+<span class="nc" id="L119">                    throw new SQLException(&quot;Book ID not found: &quot; + bookId);</span>
+                }
+            }
+        }
+    }
+    private String executeUpdate(PreparedStatement preparedStatement, String successMessage) throws SQLException {
+<span class="fc" id="L125">        int affectedRows = preparedStatement.executeUpdate();</span>
+<span class="fc" id="L126">        System.out.println(affectedRows);</span>
+<span class="fc bfc" id="L127" title="All 2 branches covered.">        if (affectedRows &gt; 0) {</span>
+<span class="fc" id="L128">            System.out.println(successMessage);</span>
+<span class="fc" id="L129">            return successMessage;</span>
+        } else {
+<span class="fc" id="L131">            System.out.println(&quot;No rows affected.&quot;);</span>
+        }
+<span class="fc" id="L133">        return successMessage;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

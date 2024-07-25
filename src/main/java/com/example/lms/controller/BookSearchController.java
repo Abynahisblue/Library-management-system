@@ -1,9 +1,7 @@
 package com.example.lms.controller;
 
-
-
 import com.example.lms.model.Book;
-import com.jfoenix.controls.JFXTextField;
+import com.example.lms.services.BookSearchService;
 import javafx.animation.ScaleTransition;
 import javafx.animation.TranslateTransition;
 import javafx.beans.value.ChangeListener;
@@ -25,13 +23,13 @@ import javafx.util.Duration;
 
 import java.io.IOException;
 import java.net.URL;
-import java.sql.*;
+import java.sql.SQLException;
 
 public class BookSearchController {
     public TextField bk_sch;
     public TableView<Book> tbl_bk;
     public AnchorPane sch_root;
-    private Connection connection;
+    private BookSearchService bookSearchService;
 
     public void initialize() {
         // Initialize TableView columns with PropertyValueFactory
@@ -41,57 +39,38 @@ public class BookSearchController {
         tbl_bk.getColumns().get(3).setCellValueFactory(new PropertyValueFactory<>("status"));
 
         try {
-            // Establish database connection
-            connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/library", "root", "Sandy_@98");
-            ObservableList<Book> books = tbl_bk.getItems();
+            bookSearchService = new BookSearchService();
+            loadTableData();
 
-            // Fetch initial data from database and populate TableView
-            String sql = "SELECT * from book_detail";
-            PreparedStatement pstm = connection.prepareStatement(sql);
-            ResultSet rst = pstm.executeQuery();
-            while (rst.next()) {
-                books.add(new Book(rst.getString(1), rst.getString(2), rst.getString(3), rst.getString(4)));
-            }
+            // Listener for text field to perform live search
+            bk_sch.textProperty().addListener(new ChangeListener<String>() {
+                @Override
+                public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+                    try {
+                        // Clear TableView items
+                        tbl_bk.getItems().clear();
+
+                        // Fetch search results from database
+                        ObservableList<Book> books = bookSearchService.searchBooks(newValue);
+                        tbl_bk.setItems(books);
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadTableData() {
+        try {
+            ObservableList<Book> books = bookSearchService.getAllBooks();
             tbl_bk.setItems(books);
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
-        // Listener for text field to perform live search
-        bk_sch.textProperty().addListener(new ChangeListener<String>() {
-            @Override
-            public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
-                String searchText = bk_sch.getText();
-
-                try {
-                    // Clear TableView items
-                    tbl_bk.getItems().clear();
-
-                    // Establish database connection
-                    Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/library", "root", "Sandy_@98");
-                    String sql = "SELECT * FROM book_detail WHERE id LIKE ? OR title LIKE ? OR author LIKE ?";
-                    PreparedStatement pstm = connection.prepareStatement(sql);
-                    String like = "%" + searchText + "%";
-                    pstm.setString(1, like);
-                    pstm.setString(2, like);
-                    pstm.setString(3, like);
-
-                    // Execute query and populate TableView with search results
-                    ResultSet rst = pstm.executeQuery();
-                    ObservableList<Book> tbl = tbl_bk.getItems();
-                    while (rst.next()) {
-                        tbl.add(new Book(rst.getString(1), rst.getString(2), rst.getString(3), rst.getString(4)));
-                    }
-
-                    connection.close(); // Close database connection
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                } catch (NullPointerException n) {
-                    // Handle potential NullPointerException (not necessary in this case)
-                    return;
-                }
-            }
-        });
     }
 
     // Method to navigate to another scene (HomeView.fxml)
@@ -131,4 +110,3 @@ public class BookSearchController {
         }
     }
 }
-
