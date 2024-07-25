@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DbConnection.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LMS</a> &gt; <a href="index.source.html" class="el_package">com.example.lms.db</a> &gt; <span class="el_source">DbConnection.java</span></div><h1>DbConnection.java</h1><pre class="source lang-java linenums">package com.example.lms.db;
+
+import java.sql.*;
+
+public class DbConnection {
+    private static DbConnection dbConnection;
+    private final Connection connection;
+
+<span class="fc" id="L9">    private DbConnection() {</span>
+        try {
+<span class="fc" id="L11">            Class.forName(&quot;com.mysql.cj.jdbc.Driver&quot;); // Updated the driver class name</span>
+<span class="fc" id="L12">            connection = DriverManager.getConnection(</span>
+                    &quot;jdbc:mysql://localhost:3306/library&quot;,
+                    &quot;root&quot;,
+                    &quot;Sandy_@98&quot;
+            );
+<span class="fc" id="L17">            PreparedStatement pstm = connection.prepareStatement(&quot;SHOW TABLES&quot;);</span>
+<span class="fc" id="L18">            ResultSet resultSet = pstm.executeQuery();</span>
+<span class="pc bpc" id="L19" title="1 of 2 branches missed.">            if (!resultSet.next()) {</span>
+<span class="nc" id="L20">                String sql =</span>
+                        &quot;CREATE TABLE IF NOT EXISTS `member_detail` (&quot; +
+                                &quot;  `id` varchar(11) NOT NULL ,&quot; +
+                                &quot;  `name` varchar(50) DEFAULT NULL,&quot; +
+                                &quot;  `address` varchar(50) DEFAULT NULL,&quot; +
+                                &quot;  `contact` varchar(12) DEFAULT NULL,&quot; +
+                                &quot;  PRIMARY KEY (`id`)&quot; +
+                                &quot;) ENGINE=InnoDB DEFAULT CHARSET=latin1;&quot; +
+                                &quot;CREATE TABLE IF NOT EXISTS `book_detail` (&quot; +
+                                &quot;  `id` varchar(10) NOT NULL,&quot; +
+                                &quot;  `title` varchar(50) DEFAULT NULL,&quot; +
+                                &quot;  `author` varchar(50) DEFAULT NULL,&quot; +
+                                &quot;  `status` varchar(20) DEFAULT NULL,&quot; +
+                                &quot;  PRIMARY KEY (`id`)&quot; +
+                                &quot;) ENGINE=InnoDB DEFAULT CHARSET=latin1;&quot; +
+                                &quot;CREATE TABLE IF NOT EXISTS `issue_table` (&quot; +
+                                &quot;  `issueId` varchar(10) NOT NULL,&quot; +
+                                &quot;  `date` date DEFAULT NULL,&quot; +
+                                &quot;  `patronId` varchar(11) DEFAULT NULL,&quot; + // Changed to int(11)
+                                &quot;  `bookId` varchar(10) DEFAULT NULL,&quot; + // Changed to varchar(10)
+                                &quot;  PRIMARY KEY (`issueId`),&quot; +
+                                &quot;  FOREIGN KEY (`patronId`) REFERENCES `member_detail` (`id`),&quot; +
+                                &quot;  FOREIGN KEY (`bookId`) REFERENCES `book_detail` (`id`)&quot; +
+                                &quot;) ENGINE=InnoDB DEFAULT CHARSET=latin1;&quot; +
+                                &quot;CREATE TABLE IF NOT EXISTS `return_detail` (&quot; +
+                                &quot;  `id` varchar(11) NOT NULL ,&quot; + // Added AUTO_INCREMENT
+                                &quot;  `issuedDate` date NOT NULL,&quot; +
+                                &quot;  `returnedDate` date DEFAULT NULL,&quot; +
+                                &quot;  `fine` float(10) DEFAULT NULL,&quot; +
+                                &quot;  `issueId` varchar(10) DEFAULT NULL,&quot; + // Changed to varchar(10)
+                                &quot;  PRIMARY KEY (`id`),&quot; +
+                                &quot;  FOREIGN KEY (`issueId`) REFERENCES `issue_table` (`issueId`)&quot; +
+                                &quot;) ENGINE=InnoDB DEFAULT CHARSET=latin1;&quot;;
+
+<span class="nc" id="L54">                pstm = connection.prepareStatement(sql);</span>
+<span class="nc" id="L55">                pstm.execute();</span>
+            }
+<span class="nc" id="L57">        } catch (Exception e) {</span>
+<span class="nc" id="L58">            System.out.println(e);</span>
+<span class="nc" id="L59">            throw new RuntimeException(e);</span>
+<span class="fc" id="L60">        }</span>
+<span class="fc" id="L61">    }</span>
+
+    public static DbConnection getInstance() {
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        if (dbConnection == null) {</span>
+<span class="fc" id="L65">            dbConnection = new DbConnection();</span>
+        }
+<span class="fc" id="L67">        return dbConnection;</span>
+    }
+
+    public static Connection getConnection() throws SQLException {
+<span class="fc" id="L71">        return DriverManager.getConnection(</span>
+                &quot;jdbc:mysql://localhost:3306/library&quot;,
+                &quot;root&quot;,
+                &quot;Sandy_@98&quot;
+        );
+    }
+
+    public static void setInstance(Connection mockConnection) {
+<span class="nc" id="L79">    }</span>
+
+    public Connection setConnection(Connection connection){
+<span class="nc" id="L82">        return this.connection;</span>
+    }
+
+    public void close() {
+
+<span class="nc" id="L87">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -10,6 +10,9 @@ import java.sql.*;
 public class BookSearchService {
     private final Connection connection;
 
+    public BookSearchService(Connection connection) throws SQLException {
+        this.connection =connection;
+    }
     public BookSearchService() throws SQLException {
         this.connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/library", "root", "Sandy_@98");
     }

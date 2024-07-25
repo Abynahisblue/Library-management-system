@@ -19,14 +19,22 @@ public class PatronService {
     private final PreparedStatement selectPatronID;
     private final PreparedStatement selectAll;
 
+    public PatronService(Connection connection) throws SQLException, ClassNotFoundException {
+        this.connection = connection;
+        this.newIdQuery = this.connection.prepareStatement("SELECT id FROM member_detail");
+        this.addToTable = this.connection.prepareStatement("INSERT INTO member_detail VALUES (?, ?, ?, ?)");
+        this.updateQuery = this.connection.prepareStatement("UPDATE member_detail SET name=?, address=?, contact=? WHERE id=?");
+        this.selectPatronID = this.connection.prepareStatement("SELECT * FROM member_detail WHERE id=?");
+        this.selectAll = this.connection.prepareStatement("SELECT * FROM member_detail");
+    }
     public PatronService() throws SQLException, ClassNotFoundException {
         DbConnection.getInstance();
         this.connection = DbConnection.getConnection();
-        this.newIdQuery = connection.prepareStatement("SELECT id FROM member_detail");
-        this.addToTable = connection.prepareStatement("INSERT INTO member_detail VALUES (?, ?, ?, ?)");
-        this.updateQuery = connection.prepareStatement("UPDATE member_detail SET name=?, address=?, contact=? WHERE id=?");
-        this.selectPatronID = connection.prepareStatement("SELECT * FROM member_detail WHERE id=?");
-        this.selectAll = connection.prepareStatement("SELECT * FROM member_detail");
+        this.newIdQuery = this.connection.prepareStatement("SELECT id FROM member_detail");
+        this.addToTable = this.connection.prepareStatement("INSERT INTO member_detail VALUES (?, ?, ?, ?)");
+        this.updateQuery = this.connection.prepareStatement("UPDATE member_detail SET name=?, address=?, contact=? WHERE id=?");
+        this.selectPatronID = this.connection.prepareStatement("SELECT * FROM member_detail WHERE id=?");
+        this.selectAll = this.connection.prepareStatement("SELECT * FROM member_detail");
     }
 
     public List<Patron> getAllPatrons() throws SQLException {

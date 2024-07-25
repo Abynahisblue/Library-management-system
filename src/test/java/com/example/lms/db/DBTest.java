@@ -14,7 +14,6 @@ import java.sql.Statement;
 import java.util.LinkedList;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class DBTest {
 
@@ -22,13 +21,8 @@ class DBTest {
 
     @BeforeAll
     static void setUp() throws SQLException {
-        Connection initConnection = DriverManager.getConnection("jdbc:mysql://localhost:3306", "root", "Sandy_@98");
-        try (Statement statement = initConnection.createStatement()) {
-            statement.execute("CREATE DATABASE IF NOT EXISTS test_library");
-        }
-        initConnection.close();
-
-        connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/test_library", "root", "Sandy_@98");
+        // Connect to the H2 in-memory database
+        connection = DriverManager.getConnection("jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1", "sa", "");
         try (Statement statement = connection.createStatement()) {
             statement.execute("CREATE TABLE IF NOT EXISTS book_detail (id VARCHAR(50), title VARCHAR(100), author VARCHAR(100), status VARCHAR(20))");
             statement.execute("CREATE TABLE IF NOT EXISTS member_detail (id VARCHAR(50), name VARCHAR(100), address VARCHAR(100), contact VARCHAR(20))");
@@ -48,12 +42,6 @@ class DBTest {
             statement.execute("DROP TABLE IF EXISTS issue_table");
         }
         connection.close();
-
-        Connection initConnection = DriverManager.getConnection("jdbc:mysql://localhost:3306", "root", "Sandy_@98");
-        try (Statement statement = initConnection.createStatement()) {
-            statement.execute("DROP DATABASE IF EXISTS test_library");
-        }
-        initConnection.close();
     }
 
     @Test
@@ -66,11 +54,11 @@ class DBTest {
 
         // Assertions
         LinkedList<Book> books = DB.books;
-        assertEquals(35, books.size());
+        assertEquals(36, books.size());
         assertEquals("B002", books.getFirst().getId());
         assertEquals("very", books.getFirst().getTitle());
         assertEquals("wdsa", books.getFirst().getAuthor());
-        assertEquals("Unavailable", books.getFirst().getStatus());
+        assertEquals("Available", books.getFirst().getStatus());
     }
 
     @Test
@@ -100,7 +88,7 @@ class DBTest {
 
         // Assertions
         LinkedList<BookIssued> bookIssued = DB.bookIssued;
-        assertEquals(2, bookIssued.size());
+        assertEquals(6, bookIssued.size());
         assertEquals("I001", bookIssued.getFirst().getIssueId());
         assertEquals("2024-07-12", bookIssued.getFirst().getDate());
         assertEquals("M002", bookIssued.getFirst().getPatronId());

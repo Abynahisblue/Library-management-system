@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PatronService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LMS</a> &gt; <a href="index.source.html" class="el_package">com.example.lms.services</a> &gt; <span class="el_source">PatronService.java</span></div><h1>PatronService.java</h1><pre class="source lang-java linenums">package com.example.lms.services;
+
+import com.example.lms.db.DbConnection;
+import com.example.lms.model.Patron;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+public class PatronService {
+
+    private final Connection connection;
+    private final PreparedStatement newIdQuery;
+    private final PreparedStatement addToTable;
+    private final PreparedStatement updateQuery;
+    private final PreparedStatement selectPatronID;
+    private final PreparedStatement selectAll;
+
+<span class="fc" id="L22">    public PatronService(Connection connection) throws SQLException, ClassNotFoundException {</span>
+<span class="fc" id="L23">        this.connection = connection;</span>
+<span class="fc" id="L24">        this.newIdQuery = this.connection.prepareStatement(&quot;SELECT id FROM member_detail&quot;);</span>
+<span class="fc" id="L25">        this.addToTable = this.connection.prepareStatement(&quot;INSERT INTO member_detail VALUES (?, ?, ?, ?)&quot;);</span>
+<span class="fc" id="L26">        this.updateQuery = this.connection.prepareStatement(&quot;UPDATE member_detail SET name=?, address=?, contact=? WHERE id=?&quot;);</span>
+<span class="fc" id="L27">        this.selectPatronID = this.connection.prepareStatement(&quot;SELECT * FROM member_detail WHERE id=?&quot;);</span>
+<span class="fc" id="L28">        this.selectAll = this.connection.prepareStatement(&quot;SELECT * FROM member_detail&quot;);</span>
+<span class="fc" id="L29">    }</span>
+<span class="nc" id="L30">    public PatronService() throws SQLException, ClassNotFoundException {</span>
+<span class="nc" id="L31">        DbConnection.getInstance();</span>
+<span class="nc" id="L32">        this.connection = DbConnection.getConnection();</span>
+<span class="nc" id="L33">        this.newIdQuery = this.connection.prepareStatement(&quot;SELECT id FROM member_detail&quot;);</span>
+<span class="nc" id="L34">        this.addToTable = this.connection.prepareStatement(&quot;INSERT INTO member_detail VALUES (?, ?, ?, ?)&quot;);</span>
+<span class="nc" id="L35">        this.updateQuery = this.connection.prepareStatement(&quot;UPDATE member_detail SET name=?, address=?, contact=? WHERE id=?&quot;);</span>
+<span class="nc" id="L36">        this.selectPatronID = this.connection.prepareStatement(&quot;SELECT * FROM member_detail WHERE id=?&quot;);</span>
+<span class="nc" id="L37">        this.selectAll = this.connection.prepareStatement(&quot;SELECT * FROM member_detail&quot;);</span>
+<span class="nc" id="L38">    }</span>
+
+    public List&lt;Patron&gt; getAllPatrons() throws SQLException {
+<span class="fc" id="L41">        List&lt;Patron&gt; patrons = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L42">        try (ResultSet rst = selectAll.executeQuery()) {</span>
+<span class="fc bfc" id="L43" title="All 2 branches covered.">            while (rst.next()) {</span>
+<span class="fc" id="L44">                patrons.add(new Patron(</span>
+<span class="fc" id="L45">                        rst.getString(1),</span>
+<span class="fc" id="L46">                        rst.getString(2),</span>
+<span class="fc" id="L47">                        rst.getString(3),</span>
+<span class="fc" id="L48">                        rst.getString(4)</span>
+                ));
+            }
+        }
+<span class="fc" id="L52">        return patrons;</span>
+    }
+
+    public Patron getPatronById(String id) throws SQLException {
+<span class="fc" id="L56">        selectPatronID.setString(1, id);</span>
+<span class="fc" id="L57">        try (ResultSet rst = selectPatronID.executeQuery()) {</span>
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">            if (rst.next()) {</span>
+<span class="fc" id="L59">                return new Patron(</span>
+<span class="fc" id="L60">                        rst.getString(1),</span>
+<span class="fc" id="L61">                        rst.getString(2),</span>
+<span class="fc" id="L62">                        rst.getString(3),</span>
+<span class="fc" id="L63">                        rst.getString(4)</span>
+                );
+            }
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">        }</span>
+<span class="nc" id="L67">        return null;</span>
+    }
+
+    public String generateNewId() throws SQLException {
+<span class="fc" id="L71">        ResultSet rst = newIdQuery.executeQuery();</span>
+<span class="fc" id="L72">        String ids = null;</span>
+<span class="fc" id="L73">        int maxId = 0;</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">        while (rst.next()) {</span>
+<span class="fc" id="L75">            ids = rst.getString(1);</span>
+<span class="fc" id="L76">            int id = Integer.parseInt(ids.replace(&quot;M&quot;, &quot;&quot;));</span>
+<span class="pc bpc" id="L77" title="1 of 2 branches missed.">            if (id &gt; maxId) {</span>
+<span class="fc" id="L78">                maxId = id;</span>
+            }
+<span class="fc" id="L80">        }</span>
+<span class="fc" id="L81">        maxId++;</span>
+<span class="fc" id="L82">        return String.format(&quot;M%03d&quot;, maxId);</span>
+    }
+
+    public void addPatron(Patron patron) throws SQLException {
+<span class="fc" id="L86">        addToTable.setString(1, patron.getId());</span>
+<span class="fc" id="L87">        addToTable.setString(2, patron.getName());</span>
+<span class="fc" id="L88">        addToTable.setString(3, patron.getAddress());</span>
+<span class="fc" id="L89">        addToTable.setString(4, patron.getContact());</span>
+<span class="fc" id="L90">        addToTable.executeUpdate();</span>
+<span class="fc" id="L91">    }</span>
+
+    public void updatePatron(Patron patron) throws SQLException {
+<span class="fc" id="L94">        updateQuery.setString(1, patron.getName());</span>
+<span class="fc" id="L95">        updateQuery.setString(2, patron.getAddress());</span>
+<span class="fc" id="L96">        updateQuery.setString(3, patron.getContact());</span>
+<span class="fc" id="L97">        updateQuery.setString(4, patron.getId());</span>
+<span class="fc" id="L98">        updateQuery.executeUpdate();</span>
+<span class="fc" id="L99">    }</span>
+
+    public void deletePatron(String id) throws SQLException {
+<span class="fc" id="L102">        try (PreparedStatement deleteQuery = connection.prepareStatement(&quot;DELETE FROM member_detail WHERE id=?&quot;)) {</span>
+<span class="fc" id="L103">            deleteQuery.setString(1, id);</span>
+<span class="fc" id="L104">            deleteQuery.executeUpdate();</span>
+        }
+<span class="fc" id="L106">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

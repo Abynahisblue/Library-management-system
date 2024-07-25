@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BookIssueService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LMS</a> &gt; <a href="index.source.html" class="el_package">com.example.lms.services</a> &gt; <span class="el_source">BookIssueService.java</span></div><h1>BookIssueService.java</h1><pre class="source lang-java linenums">package com.example.lms.services;
+
+
+import com.example.lms.db.DbConnection;
+import com.example.lms.model.BookIssued;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+public class BookIssueService {
+    private final Connection connection;
+    private final PreparedStatement selectAll;
+    private final PreparedStatement insertStatement;
+    private final PreparedStatement updateBookStatus;
+    private final PreparedStatement selectBookStatus;
+    private final PreparedStatement selectBookIdFromIssue;
+    private final PreparedStatement deleteStatement;
+
+<span class="fc" id="L23">    public BookIssueService(Connection connection) throws SQLException, ClassNotFoundException {</span>
+
+<span class="fc" id="L25">        this.connection = connection;</span>
+<span class="fc" id="L26">        this.selectAll = this.connection.prepareStatement(&quot;SELECT * FROM issue_table&quot;);</span>
+<span class="fc" id="L27">        this.insertStatement = this.connection.prepareStatement(&quot;INSERT INTO issue_table (issueId, date, patronId, bookId) VALUES (?, ?, ?, ?)&quot;);</span>
+<span class="fc" id="L28">        this.updateBookStatus = this.connection.prepareStatement(&quot;UPDATE book_detail SET status = 'Unavailable' WHERE id = ?&quot;);</span>
+<span class="fc" id="L29">        this.selectBookStatus = this.connection.prepareStatement(&quot;SELECT status FROM book_detail WHERE id = ?&quot;);</span>
+<span class="fc" id="L30">        this.selectBookIdFromIssue = this.connection.prepareStatement(&quot;SELECT bookId FROM issue_table WHERE issueId = ?&quot;);</span>
+<span class="fc" id="L31">        this.deleteStatement = this.connection.prepareStatement(&quot;DELETE FROM issue_table WHERE issueId = ?&quot;);</span>
+<span class="fc" id="L32">    }</span>
+
+<span class="nc" id="L34">    public BookIssueService() throws SQLException, ClassNotFoundException {</span>
+<span class="nc" id="L35">        DbConnection.getInstance();</span>
+<span class="nc" id="L36">        this.connection = DbConnection.getConnection();</span>
+<span class="nc" id="L37">        this.selectAll = this.connection.prepareStatement(&quot;SELECT * FROM issue_table&quot;);</span>
+<span class="nc" id="L38">        this.insertStatement = this.connection.prepareStatement(&quot;INSERT INTO issue_table (issueId, date, patronId, bookId) VALUES (?, ?, ?, ?)&quot;);</span>
+<span class="nc" id="L39">        this.updateBookStatus = this.connection.prepareStatement(&quot;UPDATE book_detail SET status = 'Unavailable' WHERE id = ?&quot;);</span>
+<span class="nc" id="L40">        this.selectBookStatus = this.connection.prepareStatement(&quot;SELECT status FROM book_detail WHERE id = ?&quot;);</span>
+<span class="nc" id="L41">        this.selectBookIdFromIssue = this.connection.prepareStatement(&quot;SELECT bookId FROM issue_table WHERE issueId = ?&quot;);</span>
+<span class="nc" id="L42">        this.deleteStatement = this.connection.prepareStatement(&quot;DELETE FROM issue_table WHERE issueId = ?&quot;);</span>
+<span class="nc" id="L43">    }</span>
+
+    public List&lt;BookIssued&gt; getAllBooksIssued() throws SQLException {
+<span class="fc" id="L46">        List&lt;BookIssued&gt; booksIssued = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L47">        try (ResultSet rst = selectAll.executeQuery()) {</span>
+<span class="fc bfc" id="L48" title="All 2 branches covered.">            while (rst.next()) {</span>
+<span class="fc" id="L49">                booksIssued.add(new BookIssued(</span>
+<span class="fc" id="L50">                        rst.getString(&quot;issueId&quot;),</span>
+<span class="fc" id="L51">                        rst.getString(&quot;date&quot;),</span>
+<span class="fc" id="L52">                        rst.getString(&quot;patronId&quot;),</span>
+<span class="fc" id="L53">                        rst.getString(&quot;bookId&quot;)</span>
+                ));
+            }
+        }
+<span class="fc" id="L57">        return booksIssued;</span>
+    }
+
+    public void addBookIssue(BookIssued bookIssued) throws SQLException {
+        // Check if the bookId exists in the book_detail table
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">        if (!isBookAvailable(bookIssued.getBookId())) {</span>
+<span class="nc" id="L63">            throw new SQLException(&quot;Book ID does not exist or is not available: &quot; + bookIssued.getBookId());</span>
+        }
+
+<span class="fc" id="L66">        String query = &quot;INSERT INTO issue_table (issueId, date, patronId, bookId) VALUES (?, ?, ?, ?)&quot;;</span>
+<span class="fc" id="L67">        try (PreparedStatement insertStatement = connection.prepareStatement(query)) {</span>
+<span class="fc" id="L68">            insertStatement.setString(1, bookIssued.getIssueId());</span>
+<span class="fc" id="L69">            insertStatement.setString(2, bookIssued.getDate());</span>
+<span class="fc" id="L70">            insertStatement.setString(3, bookIssued.getPatronId());</span>
+<span class="fc" id="L71">            insertStatement.setString(4, bookIssued.getBookId());</span>
+<span class="fc" id="L72">            insertStatement.executeUpdate();</span>
+        }
+<span class="fc" id="L74">    }</span>
+
+
+    public void updateBookStatusToUnavailable(String issueID) throws SQLException {
+<span class="fc" id="L78">        String bookId = getBookIdFromIssue(issueID);</span>
+<span class="fc" id="L79">        updateBookStatus.setString(1, bookId);</span>
+<span class="fc" id="L80">        updateBookStatus.executeUpdate();</span>
+<span class="fc" id="L81">    }</span>
+
+    public String getBookIdFromIssue(String issueID) throws SQLException {
+<span class="fc" id="L84">        String query = &quot;SELECT bookId FROM issue_table WHERE issueId = ?&quot;;</span>
+<span class="fc" id="L85">        try (PreparedStatement selectBookIdFromIssue = connection.prepareStatement(query)) {</span>
+<span class="fc" id="L86">            selectBookIdFromIssue.setString(1, issueID);</span>
+<span class="fc" id="L87">            ResultSet resultSet = selectBookIdFromIssue.executeQuery();</span>
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">            if (resultSet.next()) {</span>
+<span class="fc" id="L89">                return resultSet.getString(&quot;bookId&quot;);</span>
+            }
+<span class="nc" id="L91">            throw new SQLException(&quot;Book ID not found&quot;);</span>
+        }
+    }
+
+
+    public boolean isBookAvailable(String bookId) throws SQLException {
+<span class="fc" id="L97">        selectBookStatus.setString(1, bookId);</span>
+<span class="fc" id="L98">        try (ResultSet rs = selectBookStatus.executeQuery()) {</span>
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">            if (rs.next()) {</span>
+<span class="fc" id="L100">                String status = rs.getString(&quot;status&quot;);</span>
+<span class="fc" id="L101">                return &quot;Available&quot;.equalsIgnoreCase(status);</span>
+            } else {
+<span class="nc" id="L103">                throw new SQLException(&quot;Book ID not found: &quot; + bookId);</span>
+            }
+        }
+    }
+
+    public void deleteBookIssue(String issueId) throws SQLException {
+<span class="fc" id="L109">        deleteStatement.setString(1, issueId);</span>
+<span class="fc" id="L110">        deleteStatement.executeUpdate();</span>
+<span class="fc" id="L111">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -13,9 +13,13 @@ import java.util.concurrent.TimeUnit;
 public class BookReturnService {
     private final Connection connection;
 
+    public BookReturnService(Connection connection) throws SQLException {
+        this.connection = connection;
+    }
     public BookReturnService() throws SQLException {
         this.connection = DbConnection.getInstance().getConnection();
     }
+
 
     public ObservableList<BookReturn> getAllReturns() throws SQLException {
         ObservableList<BookReturn> returns = FXCollections.observableArrayList();

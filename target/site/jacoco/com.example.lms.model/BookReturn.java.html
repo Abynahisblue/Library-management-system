@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BookReturn.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LMS</a> &gt; <a href="index.source.html" class="el_package">com.example.lms.model</a> &gt; <span class="el_source">BookReturn.java</span></div><h1>BookReturn.java</h1><pre class="source lang-java linenums">package com.example.lms.model;
+
+public class BookReturn {
+    private String id;
+    private String issuedDate;
+    private String returnedDate;
+    private float fine;
+
+<span class="fc" id="L9">    public BookReturn(String id, String issuedDate, String returnedDate,float fine) {</span>
+<span class="fc" id="L10">        this.id = id;</span>
+<span class="fc" id="L11">        this.issuedDate = issuedDate;</span>
+<span class="fc" id="L12">        this.returnedDate = returnedDate;</span>
+<span class="fc" id="L13">        this.fine = fine;</span>
+<span class="fc" id="L14">    }</span>
+
+
+
+
+    public float getFine() {
+<span class="fc" id="L20">        return fine;</span>
+    }
+
+    public void setFine(float fine) {
+<span class="fc" id="L24">        this.fine = fine;</span>
+<span class="fc" id="L25">    }</span>
+
+
+<span class="fc" id="L28">    public BookReturn(String id, String issuedDate, String returnedDate) {</span>
+<span class="fc" id="L29">        this.id = id;</span>
+<span class="fc" id="L30">        this.issuedDate = issuedDate;</span>
+<span class="fc" id="L31">        this.returnedDate = returnedDate;</span>
+
+<span class="fc" id="L33">    }</span>
+
+    public String getId() {
+<span class="fc" id="L36">        return id;</span>
+    }
+
+    public void setId(String id) {
+<span class="fc" id="L40">        this.id = id;</span>
+<span class="fc" id="L41">    }</span>
+
+    public String getIssuedDate() {
+<span class="fc" id="L44">        return issuedDate;</span>
+    }
+
+    public void setIssuedDate(String issuedDate) {
+<span class="fc" id="L48">        this.issuedDate = issuedDate;</span>
+<span class="fc" id="L49">    }</span>
+
+    public String getReturnedDate() {
+<span class="fc" id="L52">        return returnedDate;</span>
+    }
+
+    public void setReturnedDate(String returnedDate) {
+<span class="fc" id="L56">        this.returnedDate = returnedDate;</span>
+<span class="fc" id="L57">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
